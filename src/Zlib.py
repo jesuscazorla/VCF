@@ -1,18 +1,10 @@
 '''Entropy Encoding of images using Zlib.'''
 
 import entropy_encoding_image as EEI
-
-import argparse
-import os
 import io
-from skimage import io as skimage_io # pip install scikit-image
-from PIL import Image # pip install 
 import numpy as np
-import logging
-import subprocess
-import cv2 as cv
 import main
-import urllib
+import logging
 
 class CoDec (EEI.CoDec):
 
