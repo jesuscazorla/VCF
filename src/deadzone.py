@@ -1,19 +1,25 @@
 '''Image quantization using a deadzone scalar quantizer.'''
 
-import argparse
-from skimage import io # pip install scikit-image
+import entropy_image_coding as EIC
+#import argparse
+#from skimage import io # pip install scikit-image
 import numpy as np
 import logging
 import main
+import importlib
 
 # pip install "scalar_quantization @ git+https://github.com/vicente-gonzalez-ruiz/scalar_quantization"
 from scalar_quantization.deadzone_quantization import Deadzone_Quantizer as Quantizer
 from scalar_quantization.deadzone_quantization import name as quantizer_name
 
-import PNG as EC # Entropy Coding
-from PNG import parser_encode
+default_QSS = 32
+default_EIC = "PNG"
 
-parser_encode.add_argument("-q", "--QSS", type=EC.int_or_str, help=f"Quantization step size (default: 32)", default=32)
+EIC.parser_encode.add_argument("-q", "--QSS", type=EIC.int_or_str, help=f"Quantization step size (default: {default_QSS})", default=default_QSS)
+EIC.parser.add_argument("-e", "--entropy_image_codec", help=f"Entropy Image Codec (default: {default_EIC}", default=default_EIC)
+
+args = EIC.parser.parse_args()
+EC = importlib.import_module(args.entropy_image_codec)
 
 class CoDec(EC.CoDec):
 
@@ -35,13 +41,26 @@ class CoDec(EC.CoDec):
 
     def encode(self):
         '''Read an image, quantize the image, and save it.'''
-        img = self.read()
+        img = self.encode_read()
         img_128 = img.astype(np.int16) - 128
         k = self.quantize(img_128)
         logging.debug(f"k.shape={k.shape} k.dtype={k.dtype} k.max={np.max(k)} k.min={np.min(k)}")
-        self.write(k)
+        compressed_k = self.compress(k)
+        self.encode_write(compressed_k)
         #self.save(img)
         rate = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
+        return rate
+
+    def decode(self):
+        '''Read a quantized image, "dequantize", and save.'''
+        compressed_k = self.decode_read()
+        k = self.decompress(compressed_k)
+        logging.debug(f"k.shape={k.shape} k.dtype={k.dtype}")        
+        y_128 = self.dequantize(k)
+        y = (np.rint(y_128).astype(np.int16) + 128).astype(np.uint8)
+        logging.debug(f"y.shape={y.shape} y.dtype={y.dtype}")        
+        self.decode_write(y)
+        rate = (self.input_bytes*8)/(k.shape[0]*k.shape[1])
         return rate
 
     def quantize(self, img):
@@ -51,17 +70,6 @@ class CoDec(EC.CoDec):
         k = k.astype(np.uint8)
         logging.debug(f"k.shape={k.shape} k.dtype={k.dtype}")
         return k
-
-    def decode(self):
-        '''Read a quantized image, "dequantize", and save.'''
-        k = self.read()
-        logging.debug(f"k.shape={k.shape} k.dtype={k.dtype}")        
-        y_128 = self.dequantize(k)
-        y = (np.rint(y_128).astype(np.int16) + 128).astype(np.uint8)
-        logging.debug(f"y.shape={y.shape} y.dtype={y.dtype}")        
-        self.write(y)
-        rate = (self.input_bytes*8)/(k.shape[0]*k.shape[1])
-        return rate
 
     def dequantize(self, k):
         '''"Dequantize" an image.'''
@@ -74,4 +82,4 @@ class CoDec(EC.CoDec):
         return y
 
 if __name__ == "__main__":
-    main.main(EC.parser, logging, CoDec)
+    main.main(EIC.parser, logging, CoDec)

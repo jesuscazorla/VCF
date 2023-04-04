@@ -1,12 +1,12 @@
 '''Entropy Encoding of images using Zlib.'''
 
-import entropy_encoding_image as EEI
+import entropy_image_coding as EIC
 import io
 import numpy as np
 import main
 import logging
 
-class CoDec (EEI.CoDec):
+class CoDec (EIC.CoDec):
 
     def compress(self, img):
         compressed_img = io.BytesIO()
@@ -58,4 +58,4 @@ class CoDec (EEI.CoDec):
         return rate
 
 if __name__ == "__main__":
-    main.main(EEI.parser, logging, CoDec)
+    main.main(EIC.parser, logging, CoDec)

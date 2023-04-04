@@ -1,14 +1,12 @@
 '''Entropy Encoding of images using PNG (Portable Network Graphics). '''
 
-import entropy_encoding_image as EEI
+import entropy_image_coding as EIC
 import io
 from skimage import io as skimage_io # pip install scikit-image
 import main
 import logging
 
-COMPRESSION_LEVEL = 9
-
-class CoDec(EEI.CoDec):
+class CoDec(EIC.CoDec):
 
     def compress(self, img):
         #compressed_img = img
@@ -69,4 +67,4 @@ class CoDec(EEI.CoDec):
         return self.encode()
 
 if __name__ == "__main__":
-    main.main(EEI.parser, logging, CoDec)
+    main.main(EIC.parser, logging, CoDec)
