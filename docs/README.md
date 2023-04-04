@@ -1,10 +1,7 @@
 ## Inheritance tree
 
-PNG
-
-deadzone LloydMax
-
-YCoCg
-
-DWT
-
+entropy_image_coding
+PNG Zlib (entropy codecs) 
+deadzone LloydMax (quantizers)
+YCoCg (color transform codecs)
+DWT (spatial transform codecs)
