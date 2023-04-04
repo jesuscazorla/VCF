@@ -1,7 +1,6 @@
 '''Shared code among the image entropy codecs. "Uncompressed" IO uses
 PNG.'''
 
-import argparse
 import os
 import io
 from skimage import io as skimage_io # pip install scikit-image
@@ -13,43 +12,6 @@ import cv2 as cv
 import main
 import urllib
 
-def int_or_str(text):
-    '''Helper function for argument parsing.'''
-    try:
-        return int(text)
-    except ValueError:
-        return text
-
-# A way of converting a call to a object's method to a plain function
-def encode(codec):
-    return codec.encode()
-
-def decode(codec):
-    return codec.decode()
-
-# Default IO images
-ENCODE_INPUT = "http://www.hpca.ual.es/~vruiz/images/lena.png"
-ENCODE_OUTPUT = "/tmp/encoded.png"
-DECODE_INPUT = ENCODE_OUTPUT
-DECODE_OUTPUT = "/tmp/decoded.png"
-
-# Main parameter of the arguments parser: "encode" or "decode"
-parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("-g", "--debug", action="store_true", help=f"Output debug information")
-subparsers = parser.add_subparsers(help="You must specify one of the following subcomands:", dest="subparser_name")
-
-# Encoder parser
-parser_encode = subparsers.add_parser("encode", help="Encode an image")
-parser_encode.add_argument("-i", "--input", type=int_or_str, help=f"Input image (default: {ENCODE_INPUT})", default=ENCODE_INPUT)
-parser_encode.add_argument("-o", "--output", type=int_or_str, help=f"Output image (default: {ENCODE_OUTPUT})", default=f"{ENCODE_OUTPUT}")
-parser_encode.set_defaults(func=encode)
-
-# Decoder parser
-parser_decode = subparsers.add_parser("decode", help='Decode an image')
-parser_decode.add_argument("-i", "--input", type=int_or_str, help=f"Input image (default: {DECODE_INPUT})", default=f"{DECODE_INPUT}")
-parser_decode.add_argument("-o", "--output", type=int_or_str, help=f"Output image (default: {DECODE_OUTPUT})", default=f"{DECODE_OUTPUT}")    
-parser_decode.set_defaults(func=decode)
-
 class CoDec:
 
     def __init__(self, args):
@@ -59,7 +21,7 @@ class CoDec:
             self.encoding = True
         else:
             self.encoding = False
-        logging.debug(f"encoding = {self.encoding}")
+        logging.debug(f"self.encoding = {self.encoding}")
         self.input_bytes = 0
         self.output_bytes = 0
 

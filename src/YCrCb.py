@@ -5,16 +5,22 @@ import numpy as np
 import logging
 import main
 import importlib
+#import quantization
 
 from color_transforms.YCrCb import from_RGB # pip install "color_transforms @ git+https://github.com/vicente-gonzalez-ruiz/color_transforms"
 from color_transforms.YCrCb import to_RGB
 
+default_QSS = 32
+default_EIC = "PNG"
 default_quantizer = "deadzone"
 
-EIC.parser.add_argument("-Q", "--quantizer", help=f"Quantizer (default: {default_quantizer}", default=default_quantizer)
+#EIC.parser_encode.add_argument("-q", "--QSS", type=EIC.int_or_str, help=f"Quantization step size (default: {default_QSS})", default=default_QSS)
+#EIC.parser.add_argument("-e", "--entropy_image_codec", help=f"Entropy Image Codec (default: {default_EIC}", default=default_EIC)
+EIC.parser.add_argument("-X", "--Xquantizer", help=f"Quantizer (default: {default_quantizer}", default=default_quantizer)
 
 args = EIC.parser.parse_args()
-Q = importlib.import_module(args.quantizer)
+print(args)
+Q = importlib.import_module(args.Xquantizer)
 
 class CoDec(Q.CoDec):
 

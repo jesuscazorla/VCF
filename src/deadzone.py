@@ -1,22 +1,24 @@
 '''Image quantization using a deadzone scalar quantizer.'''
 
-import entropy_image_coding as EIC
 import numpy as np
 import logging
 import main
-import importlib
+import parser
 
 # pip install "scalar_quantization @ git+https://github.com/vicente-gonzalez-ruiz/scalar_quantization"
 from scalar_quantization.deadzone_quantization import Deadzone_Quantizer as Quantizer
 from scalar_quantization.deadzone_quantization import name as quantizer_name
 
+import entropy_image_coding as EIC
+import importlib
+
 default_QSS = 32
 default_EIC = "PNG"
 
-EIC.parser_encode.add_argument("-q", "--QSS", type=EIC.int_or_str, help=f"Quantization step size (default: {default_QSS})", default=default_QSS)
-EIC.parser.add_argument("-e", "--entropy_image_codec", help=f"Entropy Image Codec (default: {default_EIC}", default=default_EIC)
+parser.parser.add_argument("-e", "--entropy_image_codec", help=f"Entropy Image Codec (default: {default_EIC}", default=default_EIC)
+parser.parser_encode.add_argument("-q", "--QSS", type=parser.int_or_str, help=f"Quantization step size (default: {default_QSS})", default=default_QSS)
 
-args = EIC.parser.parse_args()
+args = parser.parser.parse_args()
 EC = importlib.import_module(args.entropy_image_codec)
 
 class CoDec(EC.CoDec):
@@ -80,4 +82,5 @@ class CoDec(EC.CoDec):
         return y
 
 if __name__ == "__main__":
-    main.main(EIC.parser, logging, CoDec)
+    main.main(parser.parser, logging, CoDec)
+    logging.info(f"quantizer = {quantizer_name}")

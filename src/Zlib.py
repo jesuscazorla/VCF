@@ -1,10 +1,25 @@
 '''Entropy Encoding of images using Zlib.'''
 
-import entropy_image_coding as EIC
 import io
 import numpy as np
 import main
 import logging
+import parser
+import entropy_image_coding as EIC
+
+# Default IO images
+ENCODE_INPUT = "http://www.hpca.ual.es/~vruiz/images/lena.png"
+ENCODE_OUTPUT = "/tmp/encoded.npz"
+DECODE_INPUT = ENCODE_OUTPUT
+DECODE_OUTPUT = "/tmp/decoded.png"
+
+# Encoder parser
+parser.parser_encode.add_argument("-i", "--input", type=parser.int_or_str, help=f"Input image (default: {ENCODE_INPUT})", default=ENCODE_INPUT)
+parser.parser_encode.add_argument("-o", "--output", type=parser.int_or_str, help=f"Output image (default: {ENCODE_OUTPUT})", default=f"{ENCODE_OUTPUT}")
+
+# Decoder parser
+parser.parser_decode.add_argument("-i", "--input", type=parser.int_or_str, help=f"Input image (default: {DECODE_INPUT})", default=f"{DECODE_INPUT}")
+parser.parser_decode.add_argument("-o", "--output", type=parser.int_or_str, help=f"Output image (default: {DECODE_OUTPUT})", default=f"{DECODE_OUTPUT}")    
 
 class CoDec (EIC.CoDec):
 
@@ -58,4 +73,4 @@ class CoDec (EIC.CoDec):
         return rate
 
 if __name__ == "__main__":
-    main.main(EIC.parser, logging, CoDec)
+    main.main(parser.parser, logging, CoDec)

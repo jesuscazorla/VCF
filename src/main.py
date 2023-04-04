@@ -2,6 +2,7 @@ def main(parser, logging, CoDec):
     parser.description = __doc__
     #args = parser.parse_known_args()[0]
     args = parser.parse_args()
+    print("main", args)
 
     if args.debug:
         #FORMAT = "%(asctime)s p%(process)s {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s"
