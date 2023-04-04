@@ -1,8 +1,6 @@
 '''Image quantization using a deadzone scalar quantizer.'''
 
 import entropy_image_coding as EIC
-#import argparse
-#from skimage import io # pip install scikit-image
 import numpy as np
 import logging
 import main
