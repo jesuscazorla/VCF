@@ -11,8 +11,9 @@ from scalar_quantization.deadzone_quantization import Deadzone_Quantizer as Quan
 from scalar_quantization.deadzone_quantization import name as quantizer_name
 
 import PNG as EC # Entropy Coding
+from PNG import parser_encode
 
-EC.parser_encode.add_argument("-q", "--QSS", type=EC.int_or_str, help=f"Quantization step size (default: 32)", default=32)
+parser_encode.add_argument("-q", "--QSS", type=EC.int_or_str, help=f"Quantization step size (default: 32)", default=32)
 
 class CoDec(EC.CoDec):
 
