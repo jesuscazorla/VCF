@@ -1,19 +1,20 @@
 '''Exploiting color (perceptual) redundancy with the YCoCg transform.'''
 
-import entropy_image_coding as EIC
 import numpy as np
 import logging
 import main
 import importlib
+import parser
 
 from color_transforms.YCoCg import from_RGB # pip install "color_transforms @ git+https://github.com/vicente-gonzalez-ruiz/color_transforms"
 from color_transforms.YCoCg import to_RGB
 
 default_quantizer = "deadzone"
 
-EIC.parser.add_argument("-Q", "--quantizer", help=f"Quantizer (default: {default_quantizer}", default=default_quantizer)
+parser.parser_encode.add_argument("-c", "--quantizer", help=f"Quantizer (default: {default_quantizer})", default=default_quantizer)
+parser.parser_decode.add_argument("-c", "--quantizer", help=f"Quantizer (default: {default_quantizer})", default=default_quantizer)
 
-args = EIC.parser.parse_args()
+args = parser.parser.parse_known_args()[0]
 Q = importlib.import_module(args.quantizer)
 
 class CoDec(Q.CoDec):
@@ -42,4 +43,4 @@ class CoDec(Q.CoDec):
         return rate
 
 if __name__ == "__main__":
-    main.main(EIC.parser, logging, CoDec)
+    main.main(parser.parser, logging, CoDec)
