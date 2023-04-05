@@ -4,13 +4,10 @@ import numpy as np
 import logging
 import main
 import importlib
-#import quantization
 import parser
 
 from color_transforms.YCrCb import from_RGB # pip install "color_transforms @ git+https://github.com/vicente-gonzalez-ruiz/color_transforms"
 from color_transforms.YCrCb import to_RGB
-
-#import entropy_image_coding as EIC
 
 default_quantizer = "deadzone"
 
@@ -18,7 +15,6 @@ parser.parser_encode.add_argument("-c", "--quantizer", help=f"Quantizer (default
 parser.parser_decode.add_argument("-c", "--quantizer", help=f"Quantizer (default: {default_quantizer})", default=default_quantizer)
 
 args = parser.parser.parse_known_args()[0]
-print(args)
 Q = importlib.import_module(args.quantizer)
 
 class CoDec(Q.CoDec):
