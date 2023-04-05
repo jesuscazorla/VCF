@@ -2,7 +2,6 @@
 
 # Some work could be done with the encoded histograms!
 
-import entropy_image_coding as EIC
 import os
 import numpy as np
 import gzip
@@ -22,8 +21,10 @@ import importlib
 default_QSS = 32
 default_EIC = "PNG"
 
-parser.parser.add_argument("-e", "--entropy_image_codec", help=f"Entropy Image Codec (default: {default_EIC}", default=default_EIC)
+parser.parser_encode.add_argument("-e", "--entropy_image_codec", help=f"Entropy Image Codec (default: {default_EIC})", default=default_EIC)
+parser.parser_decode.add_argument("-e", "--entropy_image_codec", help=f"Entropy Image Codec (default: {default_EIC})", default=default_EIC)
 parser.parser_encode.add_argument("-q", "--QSS", type=parser.int_or_str, help=f"Quantization step size (default: {default_QSS})", default=default_QSS)
+parser.parser_decode.add_argument("-q", "--QSS", type=parser.int_or_str, help=f"Quantization step size (default: {default_QSS})", default=default_QSS)
 
 args = parser.parser.parse_args()
 EC = importlib.import_module(args.entropy_image_codec)

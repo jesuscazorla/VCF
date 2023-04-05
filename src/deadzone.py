@@ -11,14 +11,16 @@ from scalar_quantization.deadzone_quantization import name as quantizer_name
 
 import entropy_image_coding as EIC
 import importlib
-
+  
 default_QSS = 32
 default_EIC = "PNG"
 
-parser.parser.add_argument("-e", "--entropy_image_codec", help=f"Entropy Image Codec (default: {default_EIC}", default=default_EIC)
+parser.parser_encode.add_argument("-e", "--entropy_image_codec", help=f"Entropy Image Codec (default: {default_EIC})", default=default_EIC)
+parser.parser_decode.add_argument("-e", "--entropy_image_codec", help=f"Entropy Image Codec (default: {default_EIC})", default=default_EIC)
 parser.parser_encode.add_argument("-q", "--QSS", type=parser.int_or_str, help=f"Quantization step size (default: {default_QSS})", default=default_QSS)
+parser.parser_decode.add_argument("-q", "--QSS", type=parser.int_or_str, help=f"Quantization step size (default: {default_QSS})", default=default_QSS)
 
-args = parser.parser.parse_args()
+args = parser.parser.parse_known_args()[0]
 EC = importlib.import_module(args.entropy_image_codec)
 
 class CoDec(EC.CoDec):
@@ -26,16 +28,17 @@ class CoDec(EC.CoDec):
     def __init__(self, args, min_index_val=-128, max_index_val=127): # ???
         super().__init__(args)
         logging.debug(f"args = {self.args}")
-        if self.encoding:
-            self.QSS = args.QSS
-            logging.info(f"QSS = {self.QSS}")
-            with open(f"{args.output}_QSS.txt", 'w') as f:
-                f.write(f"{self.args.QSS}")
-                logging.info(f"Written {self.args.output}_QSS.txt")
-        else:
-            with open(f"{args.input}_QSS.txt", 'r') as f:
-                self.QSS = int(f.read())
-                logging.info(f"Read QSS={self.QSS} from {self.args.output}_QSS.txt")
+        #if self.encoding:
+        #    self.QSS = args.QSS
+        #    logging.info(f"QSS = {self.QSS}")
+        #    with open(f"{args.output}_QSS.txt", 'w') as f:
+        #        f.write(f"{self.args.QSS}")
+        #        logging.debug(f"Written {self.args.QSS} in {self.args.output}_QSS.txt")
+        #else:
+        #    with open(f"{args.input}_QSS.txt", 'r') as f:
+        #        self.QSS = int(f.read())
+        #        logging.debug(f"Read QSS={self.QSS} from {self.args.output}_deadzone.txt")
+        self.QSS = args.QSS
         self.Q = Quantizer(Q_step=self.QSS, min_val=min_index_val, max_val=max_index_val)
         self.output_bytes = 1 # We suppose that the representation of QSS requires 1 byte.
 
