@@ -22,8 +22,8 @@ class CoDec(Q.CoDec):
     def encode(self):
         img = self.encode_read()
         #img_128 = img.astype(np.int16) - 128
-        YCoCg_img = from_RGB(img.astype(np.uint8))
-        k = self.quantize(YCoCg_img)
+        YCrCb_img = from_RGB(img.astype(np.uint8))
+        k = self.quantize(YCrCb_img)
         compressed_k = self.compress(k)
         self.encode_write(compressed_k)
         rate = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
@@ -33,9 +33,9 @@ class CoDec(Q.CoDec):
         compressed_k = self.decode_read()
         k = self.decompress(compressed_k)
         #k = self.read()
-        YCoCg_y = self.dequantize(k)
+        YCrCb_y = self.dequantize(k)
         #y_128 = to_RGB(YCoCg_y.astype(np.int16))
-        y = to_RGB(YCoCg_y.astype(np.uint8))
+        y = to_RGB(YCrCb_y.astype(np.uint8))
         #y = (y_128.astype(np.int16) + 128)
         y = np.clip(y, 0, 255).astype(np.uint8)
         self.decode_write(y)

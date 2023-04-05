@@ -21,8 +21,11 @@ class CoDec(Q.CoDec):
 
     def encode(self):
         img = self.encode_read()
-        img_128 = img.astype(np.int16) - 128
-        YCoCg_img = from_RGB(img_128)
+        # Specific for solving the issue https://github.com/vicente-gonzalez-ruiz/scalar_quantization/issues/1
+        #img_128 = img.astype(np.int16) - 128
+        #YCoCg_img_128 = from_RGB(img_128)
+        #YCoCg_img = YCoCg_img_128 + 128
+        YCoCg_img = from_RGB(img.astype(np.int16))
         k = self.quantize(YCoCg_img)
         compressed_k = self.compress(k)
         self.encode_write(compressed_k)
@@ -32,11 +35,12 @@ class CoDec(Q.CoDec):
     def decode(self):
         compressed_k = self.decode_read()
         k = self.decompress(compressed_k)
-        #k = self.read()
         YCoCg_y = self.dequantize(k)
-        #y_128 = to_RGB(YCoCg_y.astype(np.int16))
-        y_128 = to_RGB(YCoCg_y)
-        y = (y_128.astype(np.int16) + 128)
+        # Specific for solving the issue https://github.com/vicente-gonzalez-ruiz/scalar_quantization/issues/1
+        #YCoCg_y_128 = YCoCg_y.astype(np.int16) - 128
+        #y_128 = to_RGB(YCoCg_y_128)
+        #y = y_128 + 128
+        y = to_RGB(YCoCg_y.astype(np.int16))
         y = np.clip(y, 0, 255).astype(np.uint8)
         self.decode_write(y)
         rate = (self.input_bytes*8)/(k.shape[0]*k.shape[1])

@@ -19,7 +19,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
         if message:
             self._print_message(message, None)
         #self.print_help()
-        print("\nThis help only shows information about the top-level parameters.\nTo get information about lower-level parameters, use:\n\"python lower-level_module.py {encode|decode} -h\".\nSee docs/README.md to see the available modules and their level.")
+        print("\nThis help only shows information about the top-level parameters.\nTo get information about lower-level parameters, use:\n\"python lower-level_module.py {encode|decode} -h\".\nSee docs/README.md to discover the available modules and their usage level.")
         exit(status)
 
 # Main parameter of the arguments parser: "encode" or "decode"
