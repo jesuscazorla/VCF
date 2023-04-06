@@ -4,6 +4,8 @@ import io
 from skimage import io as skimage_io # pip install scikit-image
 import main
 import logging
+import numpy as np
+import cv2 as cv
 import parser
 import entropy_image_coding as EIC
 
@@ -23,12 +25,22 @@ parser.parser_decode.add_argument("-o", "--output", type=parser.int_or_str, help
 
 parser.parser.parse_known_args()
 
+COMPRESSION_LEVEL = 9
+
 class CoDec(EIC.CoDec):
 
+    # pip install imageio-freeimage
     def compress(self, img):
+        #skimage_io.use_plugin('freeimage')
         #compressed_img = img
+        logging.debug(f"img.dtype={img.dtype}")
+        #assert (img.dtype == np.uint8) or (img.dtype == np.uint16)
+        assert (img.dtype == np.uint8)
         compressed_img = io.BytesIO()
-        skimage_io.imsave(fname=compressed_img, arr=img, plugin="pil")
+        skimage_io.imsave(fname=compressed_img, arr=img, plugin="pil", check_contrast=False)
+        #skimage_io.imsave(fname=compressed_img, arr=img, plugin="freeimage")
+        #img = cv.cvtColor(img, cv.COLOR_RGB2BGR)
+        #cv.imwrite(compressed_img, img, [cv.IMWRITE_PNG_COMPRESSION, COMPRESSION_LEVEL])
         return compressed_img
 
     def decompress(self, compressed_img):
@@ -36,6 +48,7 @@ class CoDec(EIC.CoDec):
         #img = cv.imread(compressed_img, cv.IMREAD_UNCHANGED)
         #img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
         img = skimage_io.imread(fname=compressed_img)
+        logging.debug(f"img.dtype={img.dtype}")
         return img
 
     def _encode_write_fn(self, img, fn):

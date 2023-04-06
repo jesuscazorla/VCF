@@ -25,7 +25,7 @@ EC = importlib.import_module(args.entropy_image_codec)
 
 class CoDec(EC.CoDec):
 
-    def __init__(self, args, min_index_val=-128, max_index_val=127): # ???
+    def __init__(self, args, min_index_val=0, max_index_val=255): # ???
         super().__init__(args)
         logging.debug(f"args = {self.args}")
         #if self.encoding:
@@ -45,8 +45,11 @@ class CoDec(EC.CoDec):
     def encode(self):
         '''Read an image, quantize the image, and save it.'''
         img = self.encode_read()
-        img_128 = img.astype(np.int16) - 128
-        k = self.quantize(img_128)
+        #img_128 = img.astype(np.int16) - 128
+        #k = self.quantize(img_128)
+        k = self.quantize(img).astype(np.uint8)
+        #k = img
+        #print("---------------", np.max(k))
         logging.debug(f"k.shape={k.shape} k.dtype={k.dtype} k.max={np.max(k)} k.min={np.min(k)}")
         compressed_k = self.compress(k)
         self.encode_write(compressed_k)
@@ -59,8 +62,11 @@ class CoDec(EC.CoDec):
         compressed_k = self.decode_read()
         k = self.decompress(compressed_k)
         logging.debug(f"k.shape={k.shape} k.dtype={k.dtype}")        
-        y_128 = self.dequantize(k)
-        y = (np.rint(y_128).astype(np.int16) + 128).astype(np.uint8)
+        #y_128 = self.dequantize(k)
+        #y = (np.rint(y_128).astype(np.int16) + 128).astype(np.uint8)
+        y = self.dequantize(k).astype(np.uint8)
+        #y = k
+        #print("---------------", np.max(y))
         logging.debug(f"y.shape={y.shape} y.dtype={y.dtype}")        
         self.decode_write(y)
         rate = (self.input_bytes*8)/(k.shape[0]*k.shape[1])
@@ -69,17 +75,17 @@ class CoDec(EC.CoDec):
     def quantize(self, img):
         '''Quantize the image.'''
         k = self.Q.encode(img)
-        k += 128 # Only positive components can be written in a PNG file
-        k = k.astype(np.uint8)
-        logging.debug(f"k.shape={k.shape} k.dtype={k.dtype}")
+        #k += 128 # Only positive components can be written in a PNG file
+        #k = k.astype(np.uint8)
+        logging.debug(f"k.shape={k.shape} k.dtype={k.dtype} max(x)={np.max(k)} min(k)={np.min(k)}")
         return k
 
     def dequantize(self, k):
         '''"Dequantize" an image.'''
-        k = k.astype(np.int16)
-        k -= 128
-        logging.debug(f"k.shape={k.shape} k.dtype={k.dtype}")
+        #k = k.astype(np.int16)
+        #k -= 128
         #self.Q = Quantizer(Q_step=QSS, min_val=min_index_val, max_val=max_index_val)
+        logging.debug(f"k.shape={k.shape} k.dtype={k.dtype} max(x)={np.max(k)} min(k)={np.min(k)}")
         y = self.Q.decode(k)
         logging.debug(f"y.shape={y.shape} y.dtype={y.dtype}")
         return y

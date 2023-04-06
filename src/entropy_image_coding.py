@@ -57,7 +57,6 @@ class CoDec:
         return img
 
     def decode_read(self):
-        print(self.args.input)
         compressed_img = self.decode_read_fn(self.args.input)
         return compressed_img
 
@@ -91,14 +90,14 @@ class CoDec:
         input_size = os.path.getsize(fn)
         self.input_bytes += input_size
         logging.info(f"Read {os.path.getsize(fn)} bytes from {fn}")
-        compressed_img = open(fn, "rb").read()
-        return compressed_img
+        data = open(fn, "rb").read()
+        return data
 
-    def encode_write_fn(self, compressed_img, fn):
-        '''Write to disk the image <compressed_img> with filename <fn>.'''
-        compressed_img.seek(0)
+    def encode_write_fn(self, data, fn):
+        '''Write to disk the image <data> with filename <fn>.'''
+        data.seek(0)
         with open(fn, "wb") as output_file:
-            output_file.write(compressed_img.read())
+            output_file.write(data.read())
         self.output_bytes += os.path.getsize(fn)
         logging.info(f"Written {os.path.getsize(fn)} bytes in {fn}")
 
