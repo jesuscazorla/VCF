@@ -9,7 +9,7 @@ import entropy_image_coding as EIC
 
 # Default IO images
 ENCODE_INPUT = "http://www.hpca.ual.es/~vruiz/images/lena.png"
-ENCODE_OUTPUT = "/tmp/encoded.npz"
+ENCODE_OUTPUT = "/tmp/encoded"
 DECODE_INPUT = ENCODE_OUTPUT
 DECODE_OUTPUT = "/tmp/decoded.png"
 
@@ -22,6 +22,10 @@ parser.parser_decode.add_argument("-i", "--input", type=parser.int_or_str, help=
 parser.parser_decode.add_argument("-o", "--output", type=parser.int_or_str, help=f"Output image (default: {DECODE_OUTPUT})", default=f"{DECODE_OUTPUT}")    
 
 class CoDec (EIC.CoDec):
+
+    def __init__(self, args):
+        super().__init__(args)
+        self.file_extension = ".npz"
 
     def compress(self, img):
         compressed_img = io.BytesIO()

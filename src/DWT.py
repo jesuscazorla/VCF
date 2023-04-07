@@ -165,10 +165,10 @@ class CoDec(CT.CoDec):
     def write_decom(self, decom):
         LL = decom[0]
         fn_without_extension = self.args.output.split('.')[0]
-        fn = f"{fn_without_extension}_LL_{self.levels}.png"
+        fn_subband = f"{fn_without_extension}_LL_{self.levels}"
         #LL = io.BytesIO(LL)
         LL = self.compress(LL.astype(np.uint8))
-        self.encode_write_fn(LL, fn)
+        self.encode_write_fn(LL, fn_subband)
         resolution_index = self.levels
         #aux_decom = [decom[0][..., 0]] # Used for computing slices
         for spatial_resolution in decom[1:]:
@@ -176,10 +176,10 @@ class CoDec(CT.CoDec):
             subband_index = 0
             #aux_resol = [] # Used for computing slices
             for subband_name in subband_names:
-                fn = f"{fn_without_extension}_{subband_name}_{resolution_index}.png"
+                fn_subband = f"{fn_without_extension}_{subband_name}_{resolution_index}"
                 #SP = io.BytesIO(spatial_resolution[subband_index])
                 SP = self.compress(spatial_resolution[subband_index].astype(np.uint8))
-                self.encode_write_fn(SP, fn)
+                self.encode_write_fn(SP, fn_subband)
                 #aux_resol.append(spatial_resolution[subband_index][..., 0])
                 subband_index += 1
             resolution_index -= 1
@@ -189,8 +189,8 @@ class CoDec(CT.CoDec):
 
     def read_decom(self):
         fn_without_extension = self.args.input.split('.')[0]
-        fn = f"{fn_without_extension}_LL_{self.levels}.png"
-        LL = self.decode_read_fn(fn)
+        fn_subband = f"{fn_without_extension}_LL_{self.levels}"
+        LL = self.decode_read_fn(fn_subband)
         LL = self.decompress(LL).astype(np.int16)
         decom = [LL]
         resolution_index = self.levels
@@ -198,8 +198,8 @@ class CoDec(CT.CoDec):
             subband_names = ["LH", "HL", "HH"]
             spatial_resolution = []
             for subband_name in subband_names:
-                fn = f"{fn_without_extension}_{subband_name}_{resolution_index}.png"
-                subband = self.decode_read_fn(fn)
+                fn_subband = f"{fn_without_extension}_{subband_name}_{resolution_index}"
+                subband = self.decode_read_fn(fn_subband)
                 subband = self.decompress(subband).astype(np.int16)
                 spatial_resolution.append(subband)
             decom.append(tuple(spatial_resolution))

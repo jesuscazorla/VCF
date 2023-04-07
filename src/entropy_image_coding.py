@@ -86,16 +86,18 @@ class CoDec:
         logging.info(f"Read {input_size} bytes from {fn} with shape {img.shape} and type={img.dtype}")
         return img
 
-    def decode_read_fn(self, fn):
+    def decode_read_fn(self, fn_without_extention):
+        fn = fn_without_extention + self.file_extension
         input_size = os.path.getsize(fn)
         self.input_bytes += input_size
         logging.info(f"Read {os.path.getsize(fn)} bytes from {fn}")
         data = open(fn, "rb").read()
         return data
 
-    def encode_write_fn(self, data, fn):
+    def encode_write_fn(self, data, fn_without_extention):
         '''Write to disk the image <data> with filename <fn>.'''
         data.seek(0)
+        fn = fn_without_extention + self.file_extension
         with open(fn, "wb") as output_file:
             output_file.write(data.read())
         self.output_bytes += os.path.getsize(fn)

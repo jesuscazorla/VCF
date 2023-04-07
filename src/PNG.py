@@ -11,7 +11,7 @@ import entropy_image_coding as EIC
 
 # Default IO images
 ENCODE_INPUT = "http://www.hpca.ual.es/~vruiz/images/lena.png"
-ENCODE_OUTPUT = "/tmp/encoded.png"
+ENCODE_OUTPUT = "/tmp/encoded"
 DECODE_INPUT = ENCODE_OUTPUT
 DECODE_OUTPUT = "/tmp/decoded.png"
 
@@ -28,6 +28,10 @@ parser.parser.parse_known_args()
 COMPRESSION_LEVEL = 9
 
 class CoDec(EIC.CoDec):
+
+    def __init__(self, args):
+        super().__init__(args)
+        self.file_extension = ".png"
 
     # pip install imageio-freeimage
     def compress(self, img):
