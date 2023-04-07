@@ -25,7 +25,7 @@ EC = importlib.import_module(args.entropy_image_codec)
 
 class CoDec(EC.CoDec):
 
-    def __init__(self, args, min_index_val=0, max_index_val=255): # ???
+    def __init__(self, args, min_index_val=0, max_index_val=255):
         super().__init__(args)
         logging.debug(f"args = {self.args}")
         #if self.encoding:
