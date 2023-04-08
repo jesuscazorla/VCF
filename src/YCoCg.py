@@ -8,6 +8,7 @@ import parser
 
 from color_transforms.YCoCg import from_RGB # pip install "color_transforms @ git+https://github.com/vicente-gonzalez-ruiz/color_transforms"
 from color_transforms.YCoCg import to_RGB
+#from information_theory import distortion # pip install "information_theory @ git+https://github.com/vicente-gonzalez-ruiz/information_theory"
 
 default_quantizer = "deadzone"
 
@@ -20,11 +21,13 @@ Q = importlib.import_module(args.quantizer)
 class CoDec(Q.CoDec):
 
     def encode(self):
-        img = self.encode_read().astype(np.int16)
+        img = self.encode_read()
+        img = img.astype(np.int16)
         # Specific for solving the issue https://github.com/vicente-gonzalez-ruiz/scalar_quantization/issues/1
         #img_128 = img.astype(np.int16) - 128
         #YCoCg_img_128 = from_RGB(img_128)
         #YCoCg_img = YCoCg_img_128 + 128
+        img -= 128
         YCoCg_img = from_RGB(img)
         #YCoCg_img[..., 1] += 128
         #YCoCg_img[..., 2] += 128
@@ -34,19 +37,27 @@ class CoDec(Q.CoDec):
         k = self.quantize(YCoCg_img)
         logging.debug(f"k.shape={k.shape}, k.type={k.dtype}")
         #k = YCoCg_img
-        k[..., 1] += 128
-        k[..., 2] += 128
-        compressed_k = self.compress(k.astype(np.uint8))
+        #k[..., 1] += 128
+        #k[..., 2] += 128
+        k += 128
+        if np.max(k) > 255:
+            logging.warning(f"k[{np.unravel_index(np.argmax(k),k.shape)}]={np.max(k)}")
+        if np.min(k) < 0:
+            logging.warning(f"k[{np.unravel_index(np.argmin(k),k.shape)}]={np.min(k)}")
+        k = np.clip(k, 0, 255).astype(np.uint8)
+        compressed_k = self.compress(k)
         self.encode_write(compressed_k)
-        rate = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
-        return rate
+        self.BPP = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
+        #logging.info(f"BPP = {BPP}")
 
     def decode(self):
         compressed_k = self.decode_read()
-        k = self.decompress(compressed_k).astype(np.int16)
+        k = self.decompress(compressed_k)
+        k = k.astype(np.int16)
         logging.debug(f"k.shape={k.shape}, k.type={k.dtype}")
-        k[..., 1] -= 128
-        k[..., 2] -= 128
+        k -= 128
+        #k[..., 1] -= 128
+        #k[..., 2] -= 128
         YCoCg_y = self.dequantize(k)
         #YCoCg_y = k
 #        logging.debug(f"max(YCoCg_y)={np.max(YCoCg_y)}, min(YCoCg_y)={np.min(YCoCg_y)}")
@@ -60,11 +71,17 @@ class CoDec(Q.CoDec):
         #YCoCg_y[..., 1] -= 128
         #YCoCg_y[..., 2] -= 128        
         y = to_RGB(YCoCg_y)
+        y += 128
         logging.debug(f"y.shape={y.shape}, y.type={y.dtype}")
+        if np.max(y) > 255:
+            logging.warning(f"k[{np.unravel_index(np.argmax(y),y.shape)}]={np.max(y)}")
+        if np.min(y) < 0:
+            logging.warning(f"y[{np.unravel_index(np.argmin(y),y.shape)}]={np.min(y)}")
         y = np.clip(y, 0, 255).astype(np.uint8)
         self.decode_write(y)
-        rate = (self.input_bytes*8)/(k.shape[0]*k.shape[1])
-        return rate
+        self.BPP = (self.input_bytes*8)/(k.shape[0]*k.shape[1])
+        #RMSE = distortion.RMSE(self.encode_read(), y)
+        #logging.info(f"RMSE = {RMSE}")
 
 if __name__ == "__main__":
     main.main(parser.parser, logging, CoDec)

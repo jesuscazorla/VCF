@@ -9,6 +9,8 @@ import parser
 from scalar_quantization.deadzone_quantization import Deadzone_Quantizer as Quantizer
 from scalar_quantization.deadzone_quantization import name as quantizer_name
 
+from information_theory import distortion # pip install "information_theory @ git+https://github.com/vicente-gonzalez-ruiz/information_theory"
+
 import entropy_image_coding as EIC
 import importlib
   
@@ -70,7 +72,8 @@ class CoDec(EC.CoDec):
         logging.debug(f"y.shape={y.shape} y.dtype={y.dtype}")        
         self.decode_write(y)
         rate = (self.input_bytes*8)/(k.shape[0]*k.shape[1])
-        return rate
+        RMSE = distortion.RMSE(img, y)
+        return RMSE
 
     def quantize(self, img):
         '''Quantize the image.'''

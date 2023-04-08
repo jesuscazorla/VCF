@@ -39,7 +39,7 @@ class CoDec(EIC.CoDec):
         #compressed_img = img
         logging.debug(f"img.dtype={img.dtype}")
         #assert (img.dtype == np.uint8) or (img.dtype == np.uint16)
-        assert (img.dtype == np.uint8)
+        assert (img.dtype == np.uint8), f"current type = {img.dtype}"
         compressed_img = io.BytesIO()
         skimage_io.imsave(fname=compressed_img, arr=img, plugin="pil", check_contrast=False)
         #skimage_io.imsave(fname=compressed_img, arr=img, plugin="freeimage")

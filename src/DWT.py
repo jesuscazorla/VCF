@@ -70,8 +70,8 @@ class CoDec(CT.CoDec):
         #compressed_k = self.compress(k.astype(np.uint8))
         #self.encode_write(compressed_k)
 
-        rate = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
-        return rate
+        self.BPP = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
+        #return rate
 
     def decode(self):
         decom_k = self.read_decom()
@@ -90,8 +90,8 @@ class CoDec(CT.CoDec):
         y = y_128# + 128
         y = np.clip(y, 0, 255).astype(np.uint8)
         self.decode_write(y)
-        rate = (self.input_bytes*8)/(y.shape[0]*y.shape[1])
-        return rate
+        self.BPP = (self.input_bytes*8)/(y.shape[0]*y.shape[1])
+        #return rate
 
     def quantize_decom(self, decom):
         LL_k = super().quantize(decom[0])

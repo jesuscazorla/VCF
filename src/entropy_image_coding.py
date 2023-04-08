@@ -28,6 +28,7 @@ class CoDec:
     def __del__(self):
         logging.info(f"Total {self.input_bytes} bytes read")
         logging.info(f"Total {self.output_bytes} bytes written")
+        logging.info(f"rate = {self.BPP} bits/pixel")
 
     def encode(self):
         '''Read an image, compress it,  and save it.'''
@@ -35,8 +36,9 @@ class CoDec:
         compressed_img = self.compress(img)
         self.encode_write(compressed_img)
         logging.debug(f"output_bytes={self.output_bytes}, img.shape={img.shape}")
-        rate = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
-        return rate
+        self.BPP = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
+        #logging.info(f"BPP = {BPP}")
+        #return BPP
 
     def decode(self):
         '''Read a compressed image, decompress it, and save it.'''
@@ -48,8 +50,9 @@ class CoDec:
         #img = io.BytesIO(decompressed_data))
         self.decode_write(img)
         logging.debug(f"output_bytes={self.output_bytes}, img.shape={img.shape}")
-        rate = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
-        return rate
+        self.BPP = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
+        #return rate, 0
+        #logging.info("RMSE = 0")
 
     def encode_read(self):
         '''Read the image specified in the class attribute <args.input>.'''

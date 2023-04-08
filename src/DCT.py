@@ -43,59 +43,79 @@ class CoDec(CT.CoDec):
         self.block_size = args.block_size
         logging.info(f"block_size = {self.block_size}")
         if args.perceptual_quantization:
-            self.quantize_decom = self.perceptual_quantize_decom
-            logging.info("using perceptual quantization")
-            # Luma
-            self.Y_QSSs = np.array([[16, 11, 10, 16, 24, 40, 51, 61], 
-                                    [12, 12, 14, 19, 26, 58, 60, 55],
-                                    [14, 13, 16, 24, 40, 57, 69, 56],
-                                    [14, 17, 22, 29, 51, 87, 80, 62],
-                                    [18, 22, 37, 56, 68, 109, 103, 77],
-                                    [24, 35, 55, 64, 81, 104, 113, 92],
-                                    [49, 64, 78, 87, 103, 121, 120, 101],
-                                    [72, 92, 95, 98, 112, 100, 103, 99]])
-            # Chroma
-            self.C_QSSs = np.array([[17, 18, 24, 47, 99, 99, 99, 99], 
-                                    [18, 21, 26, 66, 99, 99, 99, 99],
-                                    [24, 26, 56, 99, 99, 99, 99, 99],
-                                    [47, 66, 99, 99, 99, 99, 99, 99],
-                                    [99, 99, 99, 99, 99, 99, 99, 99],
-                                    [99, 99, 99, 99, 99, 99, 99, 99],
-                                    [99, 99, 99, 99, 99, 99, 99, 99],
-                                    [99, 99, 99, 99, 99, 99, 99, 99]])
+            if self.block_size == 8:
+                self.quantize_decom = self.perceptual_quantize_decom
+                logging.info("using perceptual quantization")
+                # Luma
+                self.Y_QSSs = np.array([[16, 11, 10, 16, 24, 40, 51, 61], 
+                                        [12, 12, 14, 19, 26, 58, 60, 55],
+                                        [14, 13, 16, 24, 40, 57, 69, 56],
+                                        [14, 17, 22, 29, 51, 87, 80, 62],
+                                        [18, 22, 37, 56, 68, 109, 103, 77],
+                                        [24, 35, 55, 64, 81, 104, 113, 92],
+                                        [49, 64, 78, 87, 103, 121, 120, 101],
+                                        [72, 92, 95, 98, 112, 100, 103, 99]])
+                # Chroma
+                self.C_QSSs = np.array([[17, 18, 24, 47, 99, 99, 99, 99], 
+                                        [18, 21, 26, 66, 99, 99, 99, 99],
+                                        [24, 26, 56, 99, 99, 99, 99, 99],
+                                        [47, 66, 99, 99, 99, 99, 99, 99],
+                                        [99, 99, 99, 99, 99, 99, 99, 99],
+                                        [99, 99, 99, 99, 99, 99, 99, 99],
+                                        [99, 99, 99, 99, 99, 99, 99, 99],
+                                        [99, 99, 99, 99, 99, 99, 99, 99]])
+            else:
+                logging.warning("sorry, perceptual quantization is only available for block_size=8")
         if self.encoding:
             if args.Lambda is not None:
-                self.Lambda = float(args.Lambda)
-                logging.info("optimizing the block size")
-                self.optimize_block_size()
-                logging.info(f"optimal block_size={self.block_size}")
+                if not args.perceptual_quantization:
+                    self.Lambda = float(args.Lambda)
+                    logging.info("optimizing the block size")
+                    self.optimize_block_size()
+                    logging.info(f"optimal block_size={self.block_size}")
+                else:
+                    logging.warning("sorry, perceptual quantization is only available for block_size=8")
 
     def encode(self):
         img = self.encode_read().astype(np.float32)
+        img -= 128
+        subband_y_size = int(img.shape[0]/self.block_size)
+        subband_x_size = int(img.shape[1]/self.block_size)
+        logging.info(f"subbband_y_size={subband_y_size}, subband_x_size={subband_x_size}")
         CT_img = from_RGB(img)
         DCT_img = space_analyze(CT_img, self.block_size, self.block_size)
         decom_img = get_subbands(DCT_img, self.block_size, self.block_size)
         decom_k = self.quantize_decom(decom_img)
         decom_k += 128
+        if np.max(decom_k) > 255:
+            logging.warning(f"decom_k[{np.unravel_index(np.argmax(decom_k),decom_k.shape)}]={np.max(decom_k)}")
+        if np.min(decom_k) < 0:
+            logging.warning(f"decom_k[{np.unravel_index(np.argmin(decom_k),decom_k.shape)}]={np.min(decom_k)}")
+        #decom_k[0:subband_y_size, 0:subband_x_size, 0] -= 128
         decom_k = decom_k.astype(np.uint8)
         #decom_k = np.clip(decom_k, 0, 255).astype(np.uint8)
         decom_k = self.compress(decom_k)
         self.encode_write(decom_k)
-        rate = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
-        return rate
+        self.BPP = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
+        #return rate
 
     def decode(self):
         decom_k = self.decode_read()
-        decom_k = self.decompress(decom_k).astype(np.float32)
+        decom_k = self.decompress(decom_k)
+        decom_k = decom_k.astype(np.float32)
+        #subband_y_size = int(decom_k.shape[0]/self.block_size)
+        #subband_x_size = int(decom_k.shape[1]/self.block_size)
         decom_k -= 128
+        #decom_k[0:subband_y_size, 0:subband_x_size, 0] += 128
         decom_y = self.dequantize_decom(decom_k)
         DCT_y = get_blocks(decom_y, self.block_size, self.block_size)
         CT_y = space_synthesize(DCT_y, self.block_size, self.block_size)
         y = to_RGB(CT_y)
+        y += 128
         y = np.clip(y, 0, 255).astype(np.uint8)
         self.decode_write(y)
-        rate = (self.input_bytes*8)/(y.shape[0]*y.shape[1])
-        return rate
+        self.BPP = (self.input_bytes*8)/(y.shape[0]*y.shape[1])
+        #return rate
 
     def quantize_decom(self, decom):
         decom_k = self.quantize(decom)
@@ -112,19 +132,19 @@ class CoDec(CT.CoDec):
         subband_x_size = int(decom.shape[1]/self.block_size)
         #decom_k = np.empty_like(decom, dtype=np.int16)
         decom_k = decom
-        for by in range(subbands_in_y):
-            for bx in range(subbands_in_x):
-                subband = decom[by*subband_y_size:(by+1)*subband_y_size,
-                                bx*subband_x_size:(bx+1)*subband_x_size,
+        for sb_y in range(subbands_in_y):
+            for sb_x in range(subbands_in_x):
+                subband = decom[sb_y*subband_y_size:(sb_y+1)*subband_y_size,
+                                sb_x*subband_x_size:(sb_x+1)*subband_x_size,
                                 :]
                 subband_k = np.empty_like(subband, dtype=np.int16)
-                self.QSS *= (self.Y_QSSs[by,bx]/121)
+                self.QSS *= (self.Y_QSSs[sb_y,sb_x]/121)
                 subband_k[..., 0] = self.quantize(subband[..., 0])
-                self.QSS *= (self.C_QSSs[by,bx]/99)
+                self.QSS *= (self.C_QSSs[sb_y,sb_x]/99)
                 subband_k[..., 1] = self.quantize(subband[..., 1])
                 subband_k[..., 2] = self.quantize(subband[..., 2])
-                decom_k[by*subband_y_size:(by+1)*subband_y_size,
-                        bx*subband_x_size:(bx+1)*subband_x_size,
+                decom_k[sb_y*subband_y_size:(sb_y+1)*subband_y_size,
+                        sb_x*subband_x_size:(sb_x+1)*subband_x_size,
                         :] = subband_k
         return decom_k
 
@@ -135,40 +155,61 @@ class CoDec(CT.CoDec):
         subband_x_size = int(decom_k.shape[1]/self.block_size)
         #decom_y = np.empty_like(decom_k, dtype=np.int16)
         decom_y = decom_k
-        for by in range(subbands_in_y):
-            for bx in range(subbands_in_x):
-                subband_k = decom_k[by*subband_y_size:(by+1)*subband_y_size,
-                                    bx*subband_x_size:(bx+1)*subband_x_size,
+        for sb_y in range(subbands_in_y):
+            for sb_x in range(subbands_in_x):
+                subband_k = decom_k[sb_y*subband_y_size:(sb_y+1)*subband_y_size,
+                                    sb_x*subband_x_size:(sb_x+1)*subband_x_size,
                                     :]
                 subband_y = np.empty_like(subband_k, dtype=np.int16)
-                self.QSS *= (self.Y_QSSs[by,bx]/121)
+                self.QSS *= (self.Y_QSSs[sb_y,sb_x]/121)
                 subband_y[..., 0] = self.dequantize(subband_k[..., 0])
-                self.QSS *= (self.C_QSSs[by,bx]/99)
+                self.QSS *= (self.C_QSSs[sb_y,sb_x]/99)
                 subband_y[..., 1] = self.dequantize(subband_k[..., 1])
                 subband_y[..., 2] = self.dequantize(subband_k[..., 2])
-                decom_k[by*subband_y_size:(by+1)*subband_y_size,
-                        bx*subband_x_size:(bx+1)*subband_x_size,
+                decom_k[sb_y*subband_y_size:(sb_y+1)*subband_y_size,
+                        sb_x*subband_x_size:(sb_x+1)*subband_x_size,
                         :] = subband_y
         return decom_y
 
     def optimize_block_size(self):
         min = 1000000
         img = self.encode_read().astype(np.float32)
-        for block_size in [2**i for i in range(1, 7)]:
+        img -= 128 #np.average(img)
+        for block_size in [2**i for i in range(1, 8)]:
             #block_size = 2**i
             CT_img = from_RGB(img)
             DCT_img = space_analyze(CT_img, block_size, block_size)
             decom_img = get_subbands(DCT_img, block_size, block_size)
+            '''
+            subband_y_size = int(img.shape[0]/block_size)
+            subband_x_size = int(img.shape[1]/block_size)
+            for sb_y in range(block_size):
+                for sb_x in range(block_size):
+                    for c in range(3):
+                        subband = decom_img[sb_y*subband_y_size:(sb_y+1)*subband_y_size,
+                                            sb_x*subband_x_size:(sb_x+1)*subband_x_size,
+                                            c]
+                        logging.info(f"({sb_y},{sb_x},{c}) subband average = {np.average(subband)}")
+ 
+            logging.info(f"subband_average")
+            '''
             decom_k = self.quantize_decom(decom_img)
             decom_k += 128
+            #decom_k[0:subband_y_size, 0:subband_x_size, 0] -= 128
+            if np.max(decom_k) > 255:
+                logging.warning(f"decom_k[{np.unravel_index(np.argmax(decom_k),decom_k.shape)}]={np.max(decom_k)}")
+            if np.min(decom_k) < 0:
+                logging.warning(f"decom_k[{np.unravel_index(np.argmin(decom_k),decom_k.shape)}]={np.min(decom_k)}")
             decom_k_bytes = self.compress(decom_k.astype(np.uint8))
             decom_k_bytes.seek(0)
             rate = len(decom_k_bytes.read())
             decom_k -= 128
+            #decom_k[0:subband_y_size, 0:subband_x_size, 0] -= 128
             decom_y = self.dequantize_decom(decom_k)
             DCT_y = get_blocks(decom_y, block_size, block_size)
             CT_y = space_synthesize(DCT_y, block_size, block_size)
             y = to_RGB(CT_y)
+            y += 128
             y = np.clip(y, 0, 255).astype(np.uint8)
             RMSE = distortion.RMSE(img, y)
             J = rate + self.Lambda*RMSE

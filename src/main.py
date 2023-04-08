@@ -26,5 +26,8 @@ def main(parser, logging, CoDec):
     codec = CoDec(args)
 
     # Run the encoder or the decoder
-    rate = args.func(codec)
-    logging.info(f"rate = {rate} bits/pixel")
+    #BPP, RMSE = args.func(codec)
+    #logging.info(f"BPP = {BPP} bits/pixel")
+    #logging.info(f"RMSE = {RMSE}")
+    #logging.info(f"rate = {args.func(codec)}")
+    args.func(codec)
