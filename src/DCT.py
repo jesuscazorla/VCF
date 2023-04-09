@@ -19,8 +19,6 @@ from DCT2D.block_DCT import get_blocks
 from color_transforms.YCoCg import from_RGB # pip install "color_transforms @ git+https://github.com/vicente-gonzalez-ruiz/color_transforms"
 from color_transforms.YCoCg import to_RGB
 
-from information_theory import distortion # pip install "information_theory @ git+https://github.com/vicente-gonzalez-ruiz/information_theory"
-
 default_block_size = 8
 default_CT = "YCoCg"
 perceptual_quantization = False
@@ -96,7 +94,7 @@ class CoDec(CT.CoDec):
         #decom_k = np.clip(decom_k, 0, 255).astype(np.uint8)
         decom_k = self.compress(decom_k)
         self.encode_write(decom_k)
-        self.BPP = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
+        #self.BPP = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
         #return rate
 
     def decode(self):
@@ -114,7 +112,7 @@ class CoDec(CT.CoDec):
         y += 128
         y = np.clip(y, 0, 255).astype(np.uint8)
         self.decode_write(y)
-        self.BPP = (self.input_bytes*8)/(y.shape[0]*y.shape[1])
+        #self.BPP = (self.input_bytes*8)/(y.shape[0]*y.shape[1])
         #return rate
 
     def quantize_decom(self, decom):

@@ -12,6 +12,8 @@ import cv2 as cv
 import main
 import urllib
 
+from information_theory import distortion # pip install "information_theory @ git+https://github.com/vicente-gonzalez-ruiz/information_theory"
+
 class CoDec:
 
     def __init__(self, args):
@@ -28,20 +30,29 @@ class CoDec:
     def __del__(self):
         logging.info(f"Total {self.input_bytes} bytes read")
         logging.info(f"Total {self.output_bytes} bytes written")
-        logging.info(f"rate = {self.BPP} bits/pixel")
+        if self.encoding:
+            BPP = (self.output_bytes*8)/(self.img_shape[0]*self.img_shape[1])
+            logging.info(f"rate = {BPP} bits/pixel")
+            with open(f"{self.args.output}_BPP.txt", 'w') as f:
+                f.write(f"{BPP}")
+        else:
+            img = self.encode_read_fn("file:///tmp/original.png")
+            y = self.encode_read_fn(self.args.output)
+            RMSE = distortion.RMSE(img, y)
+            logging.info(f"RMSE = {RMSE}")
+            with open(f"{self.args.input}_BPP.txt", 'r') as f:
+                BPP = float(f.read())
+            J = BPP + RMSE
+            logging.info(f"J = R + D = {J}")
 
     def encode(self):
-        '''Read an image, compress it,  and save it.'''
         img = self.encode_read()
         compressed_img = self.compress(img)
         self.encode_write(compressed_img)
-        logging.debug(f"output_bytes={self.output_bytes}, img.shape={img.shape}")
-        self.BPP = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
         #logging.info(f"BPP = {BPP}")
         #return BPP
 
     def decode(self):
-        '''Read a compressed image, decompress it, and save it.'''
         compressed_img = self.decode_read()
         img = self.decompress(compressed_img)
         #compressed_img_diskimage = io.BytesIO(compressed_img)
@@ -49,14 +60,17 @@ class CoDec:
         #decompressed_data = zlib.decompress(compressed_img)
         #img = io.BytesIO(decompressed_data))
         self.decode_write(img)
-        logging.debug(f"output_bytes={self.output_bytes}, img.shape={img.shape}")
-        self.BPP = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
+        #logging.debug(f"output_bytes={self.output_bytes}, img.shape={img.shape}")
+        #self.BPP = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
         #return rate, 0
         #logging.info("RMSE = 0")
 
     def encode_read(self):
         '''Read the image specified in the class attribute <args.input>.'''
         img = self.encode_read_fn(self.args.input)
+        self.decode_write_fn(img, "/tmp/original.png")
+        self.output_bytes = 0
+        self.img_shape = img.shape
         return img
 
     def decode_read(self):

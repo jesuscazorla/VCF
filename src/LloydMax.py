@@ -34,14 +34,19 @@ class CoDec(EC.CoDec):
     def __init__(self, args): # ??
         super().__init__(args)
 
+    def _compress(self, img):
+        k = self.quantize(img)
+        #k = k.astype(np.uint8)
+        compressed_k = super().compress(k)
+        return compressed_k
+
     def encode(self):
-        '''Read an image, quantize the image, and save it.'''
         img = self.encode_read()
         k = self.quantize(img)
         compressed_k = self.compress(k)
         self.encode_write(compressed_k)
-        rate = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
-        return rate
+        #rate = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
+        #return rate
 
     def decode(self):
         #k = io.imread(self.args.input)
@@ -49,8 +54,14 @@ class CoDec(EC.CoDec):
         k = self.decompress(compressed_k)
         y = self.dequantize(k)
         self.decode_write(y)
-        rate = (self.input_bytes*8)/(k.shape[0]*k.shape[1])
-        return rate
+        #rate = (self.input_bytes*8)/(k.shape[0]*k.shape[1])
+        #return rate
+
+    def _decompress(self, compressed_k):
+        k = super().decompress(compressed_k)
+        #k = k.astype(np.uint8)
+        y = self.dequantize(k)
+        return y
 
     def quantize(self, img):
         '''Quantize the image.'''

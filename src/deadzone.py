@@ -44,6 +44,16 @@ class CoDec(EC.CoDec):
         self.Q = Quantizer(Q_step=self.QSS, min_val=min_index_val, max_val=max_index_val)
         self.output_bytes = 1 # We suppose that the representation of QSS requires 1 byte.
 
+    def _compress(self, img):
+        k = self.quantize(img)
+        if np.max(k) > 255:
+            logging.warning(f"k[{np.unravel_index(np.argmax(k),k.shape)}]={np.max(k)}")
+        if np.min(k) < 0:
+            logging.warning(f"k[{np.unravel_index(np.argmin(k),k.shape)}]={np.min(k)}")
+        k = k.astype(np.uint8)
+        compressed_k = super().compress(k)
+        return compressed_k
+
     def encode(self):
         '''Read an image, quantize the image, and save it.'''
         img = self.encode_read()
@@ -56,9 +66,15 @@ class CoDec(EC.CoDec):
         compressed_k = self.compress(k)
         self.encode_write(compressed_k)
         #self.save(img)
-        rate = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
-        return rate
+        #rate = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
+        #return rate
 
+    def _decompress(self, compressed_k):
+        k = super().decompress(compressed_k)
+        #k = k.astype(np.uint8)
+        y = self.dequantize(k)
+        return y
+    
     def decode(self):
         '''Read a quantized image, "dequantize", and save.'''
         compressed_k = self.decode_read()
@@ -71,9 +87,9 @@ class CoDec(EC.CoDec):
         #print("---------------", np.max(y))
         logging.debug(f"y.shape={y.shape} y.dtype={y.dtype}")        
         self.decode_write(y)
-        rate = (self.input_bytes*8)/(k.shape[0]*k.shape[1])
-        RMSE = distortion.RMSE(img, y)
-        return RMSE
+        #rate = (self.input_bytes*8)/(k.shape[0]*k.shape[1])
+        #RMSE = distortion.RMSE(img, y)
+        #return RMSE
 
     def quantize(self, img):
         '''Quantize the image.'''
