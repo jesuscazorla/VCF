@@ -112,7 +112,6 @@ class CoDec:
         return data
 
     def encode_write_fn(self, data, fn_without_extention):
-        '''Write to disk the image <data> with filename <fn>.'''
         data.seek(0)
         fn = fn_without_extention + self.file_extension
         with open(fn, "wb") as output_file:

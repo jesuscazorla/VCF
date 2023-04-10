@@ -20,6 +20,12 @@ Q = importlib.import_module(args.quantizer)
 
 class CoDec(Q.CoDec):
 
+    def __init__(self, args):
+        super().__init__(args)
+        if args.quantizer == "deadzone":
+            self.offset = 128
+        else:
+            self.offset = 0
 
     def _compress(self, img):
         img = img.astype(np.int16)
@@ -42,7 +48,7 @@ class CoDec(Q.CoDec):
         #img_128 = img.astype(np.int16) - 128
         #YCoCg_img_128 = from_RGB(img_128)
         #YCoCg_img = YCoCg_img_128 + 128
-        img -= 128
+        img -= self.offset
         YCoCg_img = from_RGB(img)
         #YCoCg_img[..., 1] += 128
         #YCoCg_img[..., 2] += 128
@@ -54,7 +60,7 @@ class CoDec(Q.CoDec):
         #k = YCoCg_img
         #k[..., 1] += 128
         #k[..., 2] += 128
-        k += 128
+        k += self.offset
         if np.max(k) > 255:
             logging.warning(f"k[{np.unravel_index(np.argmax(k),k.shape)}]={np.max(k)}")
         if np.min(k) < 0:
@@ -70,7 +76,7 @@ class CoDec(Q.CoDec):
         k = self.decompress(compressed_k)
         k = k.astype(np.int16)
         logging.debug(f"k.shape={k.shape}, k.type={k.dtype}")
-        k -= 128
+        k -= self.offset
         #k[..., 1] -= 128
         #k[..., 2] -= 128
         YCoCg_y = self.dequantize(k)
@@ -86,10 +92,10 @@ class CoDec(Q.CoDec):
         #YCoCg_y[..., 1] -= 128
         #YCoCg_y[..., 2] -= 128        
         y = to_RGB(YCoCg_y)
-        y += 128
+        y += self.offset
         logging.debug(f"y.shape={y.shape}, y.type={y.dtype}")
         if np.max(y) > 255:
-            logging.warning(f"k[{np.unravel_index(np.argmax(y),y.shape)}]={np.max(y)}")
+            logging.warning(f"y[{np.unravel_index(np.argmax(y),y.shape)}]={np.max(y)}")
         if np.min(y) < 0:
             logging.warning(f"y[{np.unravel_index(np.argmin(y),y.shape)}]={np.min(y)}")
         y = np.clip(y, 0, 255).astype(np.uint8)

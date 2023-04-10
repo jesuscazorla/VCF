@@ -61,7 +61,7 @@ class CoDec(Q.CoDec):
         #y += 128
         #y = (y_128.astype(np.int16) + 128)
         if np.max(y) > 255:
-            logging.warning(f"k[{np.unravel_index(np.argmax(y),y.shape)}]={np.max(y)}")
+            logging.warning(f"y[{np.unravel_index(np.argmax(y),y.shape)}]={np.max(y)}")
         if np.min(y) < 0:
             logging.warning(f"y[{np.unravel_index(np.argmin(y),y.shape)}]={np.min(y)}")
         y = np.clip(y, 0, 255).astype(np.uint8)
