@@ -66,6 +66,7 @@ class CoDec(EC.CoDec):
         blocks = np.asarray(blocks).astype(int)
         if(len(blocks) < self.N_clusters):
             logging.warning('\033[91m' + "Warning: Must reduce number of clusters. Image not big enough | too much pixel reducction" + '\033[0m')
+            self.N_clusters = len(blocks)
         #initial_centroids = np.ones(shape=(self.N_clusters, self.BS*self.BS*img.shape[2]))*255
         #for i in range(self.N_clusters): # Ojo, que quizás no se use
         #    initial_centroids[i] = np.round(initial_centroids[i]/self.N_clusters)
