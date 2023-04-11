@@ -87,14 +87,18 @@ class CoDec(CT.CoDec):
         CT_img = from_RGB(img)
         DCT_img = space_analyze(CT_img, self.block_size, self.block_size)
         decom_img = get_subbands(DCT_img, self.block_size, self.block_size)
+        print(decom_img, decom_img.shape)
         decom_k = self.quantize_decom(decom_img)
         decom_k += self.offset
+        logging.info(f"decom_k[{np.unravel_index(np.argmax(decom_k),decom_k.shape)}]={np.max(decom_k)}")
+        logging.info(f"decom_k[{np.unravel_index(np.argmin(decom_k),decom_k.shape)}]={np.min(decom_k)}")
         if np.max(decom_k) > 255:
             logging.warning(f"decom_k[{np.unravel_index(np.argmax(decom_k),decom_k.shape)}]={np.max(decom_k)}")
         if np.min(decom_k) < 0:
             logging.warning(f"decom_k[{np.unravel_index(np.argmin(decom_k),decom_k.shape)}]={np.min(decom_k)}")
         #decom_k[0:subband_y_size, 0:subband_x_size, 0] -= 128
         decom_k = decom_k.astype(np.uint8)
+        #print("----------_", decom_k, decom_k.shape)
         #decom_k = np.clip(decom_k, 0, 255).astype(np.uint8)
         decom_k = self.compress(decom_k)
         self.encode_write(decom_k)
@@ -105,11 +109,13 @@ class CoDec(CT.CoDec):
         decom_k = self.decode_read()
         decom_k = self.decompress(decom_k)
         decom_k = decom_k.astype(np.int16)
+        #print("----------_", decom_k, decom_k.shape)
         #subband_y_size = int(decom_k.shape[0]/self.block_size)
         #subband_x_size = int(decom_k.shape[1]/self.block_size)
         decom_k -= self.offset
         #decom_k[0:subband_y_size, 0:subband_x_size, 0] += 128
         decom_y = self.dequantize_decom(decom_k)
+        print(decom_y, decom_y.shape)
         DCT_y = get_blocks(decom_y, self.block_size, self.block_size)
         CT_y = space_synthesize(DCT_y, self.block_size, self.block_size)
         y = to_RGB(CT_y)

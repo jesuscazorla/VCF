@@ -1,5 +1,6 @@
 '''Image quantization using a deadzone scalar quantizer.'''
 
+import os
 import numpy as np
 import logging
 import main
@@ -73,14 +74,14 @@ class CoDec(EC.CoDec):
         #k_means = cluster.KMeans(init=initial_centroids, n_init=1, n_clusters=self.N_clusters, random_state=0, algorithm="elkan")
         
         k_means.fit(blocks)
-        centroids = k_means.cluster_centers_.astype(np.uint8)
+        centroids = k_means.cluster_centers_#.astype(np.uint8)
         centroids_energy = np.empty(centroids.shape[0])
         counter = 0
         for i in centroids:
             centroids_energy[counter] = information.energy(i)
             counter += 1
         argsort_centroids = np.argsort(centroids_energy)
-        lut = np.empty_like(argsort_centroids, dtype=np.uint8)
+        lut = np.empty_like(argsort_centroids, dtype=np.int16)
         lut[argsort_centroids] = np.arange(self.N_clusters)
         labels = k_means.labels_
         labels = lut[labels]
@@ -90,21 +91,28 @@ class CoDec(EC.CoDec):
         centroids = _centroids
         labels_shape = (img.shape[0]//self.BS,
                         img.shape[1]//self.BS)
-        labels = labels.astype(np.uint8).reshape(labels_shape)
-        centroids = centroids.reshape(centroids.shape[0], self.BS*self.BS, img.shape[2]).astype(np.uint8)
-        compressed_centroids = self.compress(centroids)
-        self.encode_write_fn(compressed_centroids, self.output + "_centroids")
+        #labels = labels.astype(np.uint8).reshape(labels_shape)
+        labels = labels.reshape(labels_shape)
+        centroids = centroids.reshape(centroids.shape[0], self.BS*self.BS, img.shape[2])#.astype(np.uint8)
+        #compressed_centroids = self.compress(centroids)
+        #self.encode_write_fn(compressed_centroids, self.output + "_centroids")
+        fn = self.output + "_centroids.npz"
+        np.savez_compressed(file=fn, a=centroids)
+        self.output_bytes += os.path.getsize(fn)
         return labels
         #return labels, centroids
 
     #def dequantize(self, labels, centroids):
     def dequantize(self, labels):
-        compressed_centroids = self.decode_read_fn(self.input + "_centroids")
-        centroids = self.decompress(compressed_centroids)
+        #compressed_centroids = self.decode_read_fn(self.input + "_centroids")
+        #centroids = self.decompress(compressed_centroids)
+        fn = self.input + "_centroids.npz"
+        self.input_bytes += os.path.getsize(fn)
+        centroids = np.load(file=fn)['a']
         img_shape = (labels.shape[0]*self.BS, labels.shape[1]*self.BS, centroids.shape[2])
         _y = np.empty(shape=(labels.shape[0]*self.BS,
                              labels.shape[1]*self.BS,
-                             centroids.shape[2]), dtype='uint8')
+                             centroids.shape[2]), dtype=np.int16)
         for y in range(0, img_shape[0], self.BS):
             for x in range(0, img_shape[1], self.BS):
                 #print("---", labels)

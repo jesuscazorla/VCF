@@ -57,6 +57,7 @@ class CoDec(Q.CoDec):
         #k = self.read()
         YCrCb_y = self.dequantize(k)
         #y_128 = to_RGB(YCoCg_y.astype(np.int16))
+        YCrCb_y = YCrCb_y.astype(np.uint8)
         y = to_RGB(YCrCb_y)
         #y += 128
         #y = (y_128.astype(np.int16) + 128)
