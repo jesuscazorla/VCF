@@ -3,7 +3,7 @@
 import io
 from skimage import io as skimage_io # pip install scikit-image
 import numpy as np
-import pywt
+import pywt # pip install pywavelets
 import os
 import logging
 import main
@@ -11,8 +11,8 @@ import parser
 import importlib
 
 #from DWT import color_dyadic_DWT as DWT
-from DCT2D.block_DCT import analyze as space_analyze # pip install "DCT2D @ git+https://github.com/vicente-gonzalez-ruiz/DCT2D"
-from DCT2D.block_DCT import synthesize as space_synthesize
+from DCT2D.block_DCT import analyze_image as space_analyze # pip install "DCT2D @ git+https://github.com/vicente-gonzalez-ruiz/DCT2D"
+from DCT2D.block_DCT import synthesize_image as space_synthesize
 from DCT2D.block_DCT import get_subbands
 from DCT2D.block_DCT import get_blocks
 
