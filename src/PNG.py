@@ -11,7 +11,7 @@ import entropy_image_coding as EIC
 
 # Default IO images
 ENCODE_INPUT = "http://www.hpca.ual.es/~vruiz/images/lena.png"
-ENCODE_OUTPUT = "/tmp/encoded"
+ENCODE_OUTPUT = "/tmp/encoded.png"
 DECODE_INPUT = ENCODE_OUTPUT
 DECODE_OUTPUT = "/tmp/decoded.png"
 

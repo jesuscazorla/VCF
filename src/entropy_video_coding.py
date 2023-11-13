@@ -8,11 +8,23 @@ from PIL import Image # pip install
 import numpy as np
 import logging
 import subprocess
-import cv2 as cv
+import cv2
 import main
 import urllib
+from urllib.parse import urlparse
+import requests
 
 from information_theory import distortion # pip install "information_theory @ git+https://github.com/vicente-gonzalez-ruiz/information_theory"
+
+class Video:
+    '''A video is a sequence of files stored in "prefix".'''
+
+    def __init__(self, N_imgs, width, height, prefix):
+        self.N_imgs = N_imgs
+        self.width = width
+        self.height = height
+        self.prefix = prefix
+        self.shape = (N_imgs, height, width)
 
 class CoDec:
 
@@ -31,8 +43,8 @@ class CoDec:
         logging.info(f"Total {self.input_bytes} bytes read")
         logging.info(f"Total {self.output_bytes} bytes written")
         if self.encoding:
-            N_frames = self.vid_shape[0]
-            BPP = (self.output_bytes*8)/(self.vid_shape[1]*self.vid_shape[2])
+            N_frames = self.N_imgs
+            BPP = (self.output_bytes*8)/(self.vid_shape[0]*self.vid_shape[1])
             logging.info(f"N_frames = {N_frames}")
             logging.info(f"rate = {BPP} bits/pixel")
             with open(f"{self.args.output}_BPP.txt", 'w') as f:
@@ -56,24 +68,14 @@ class CoDec:
         vid = self.encode_read()
         compressed_vid = self.compress(vid)
         self.encode_write(compressed_vid)
-        #logging.info(f"BPP = {BPP}")
-        #return BPP
 
     def decode(self):
         compressed_vid = self.decode_read()
         vid = self.decompress(compressed_vid)
-        #compressed_img_diskimage = io.BytesIO(compressed_img)
-        #img = np.load(compressed_img_diskimage)['a']
-        #decompressed_data = zlib.decompress(compressed_img)
-        #img = io.BytesIO(decompressed_data))
         self.decode_write(vid)
-        #logging.debug(f"output_bytes={self.output_bytes}, img.shape={img.shape}")
-        #self.BPP = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
-        #return rate, 0
-        #logging.info("RMSE = 0")
 
     def encode_read(self):
-        '''Read the video specified in the class attribute <args.input>.'''
+        '''Read the video specified in the class attribute args.input.'''
         vid = self.encode_read_fn(self.args.input)
         self.decode_write_fn(vid, "/tmp/original.avi")
         self.output_bytes = 0
@@ -85,30 +87,104 @@ class CoDec:
         return compressed_vid
 
     def encode_write(self, compressed_vid):
-        '''Save to disk the video specified in the class attribute <
-        args.output>.'''
+        '''Save to disk the video specified in the class attribute args.output.'''
         self.encode_write_fn(compressed_vid, self.args.output)
 
     def decode_write(self, vid):
         return self.decode_write_fn(vid, self.args.output)
-        
-    def encode_read_fn(self, fn):
-        '''Read the video <fn>.'''
-        #img = skimage_io.imread(fn) # https://scikit-image.org/docs/stable/api/skimage.io.html#skimage.io.imread
-        #img = Image.open(fn) # https://pillow.readthedocs.io/en/stable/handbook/tutorial.html#using-the-image-class
+
+    def __is_http_url(self, url):
         try:
+            result = urlparse(url)
+            return all([result.scheme, result.netloc]) and result.scheme.lower() in ['http', 'https']
+        except ValueError:
+            return False
+        
+    def _encode_read_fn(self, fn):
+        '''Read the video <fn>.'''
+
+    
+        if __is_http_url(fn):
+            response = requests.get(fn) # Download the video file (in memory)
+            if response.status_code == 200: # If the download was successful
+                fn = BytesIO(response.content) # Open the downloaded video as a byte stream
+                input_size = len(fn)
+        else:
             input_size = os.path.getsize(fn)
-            self.input_bytes += input_size 
-            img = cv.imread(fn, cv.IMREAD_UNCHANGED)
-            img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
-        except:
-            req = urllib.request.Request(fn, method='HEAD')
-            f = urllib.request.urlopen(req)
-            input_size = int(f.headers['Content-Length'])
-            self.input_bytes += input_size
-            img = skimage_io.imread(fn) # https://scikit-image.org/docs/stable/api/skimage.io.html#skimage.io.imread
-        logging.info(f"Read {input_size} bytes from {fn} with shape {img.shape} and type={img.dtype}")
-        return img
+        self.input_bytes += input_size 
+        cap = cv2.VideoCapture(fn)
+        N_imgs = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        digits = len(str(N_imgs))
+        img_counter = 0
+        while True:
+            ret, img = cap.read()
+
+            if not ret:
+                break # Break the loop if the video has ended
+
+            # Write the frame in /tmp/VCF_input
+            img_fn = os.path.join("/tmp", f"img_{img_counter:0{digits}d}.png")
+            img_counter += 1
+            cv2.imwrite(img_fn, img)
+        return Video(N_imgs, img.shape[0], img.shape[1], "/tmp/img_")
+
+    def _encode_read_fn(self, fn):
+        '''Read the video <fn>.'''
+
+        from urllib.parse import urlparse
+        import imageio_ffmpeg as ffmpeg
+    
+        if __is_http_url(fn):
+            response = requests.get(fn) # Download the video file (in memory)
+            if response.status_code == 200: # If the download was successful
+                fn = BytesIO(response.content) # Open the downloaded video as a byte stream
+                input_size = len(fn)
+        else:
+            input_size = os.path.getsize(fn)
+        self.input_bytes += input_size
+
+        cap = cv2.VideoCapture(fn)
+        N_imgs = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        digits = len(str(N_imgs))
+
+        with ffmpeg.get_reader(fn) as reader:
+            for i, img in enumerate(reader):
+                frame_array = np.array(img)        
+
+                # Write the frame in /tmp/img_
+                img_fn = os.path.join("/tmp", f"img_{img_counter:0{digits}d}.png")
+                img_counter += 1
+                cv2.imwrite(img_fn, img)
+            N_imgs = len(reader)
+            logging.info(f"")
+        return Video(N_imgs, img.shape[0], img.shape[1], "/tmp/img_")
+
+    def encode_read_fn(self, fn):
+        '''"Read" (videos are not stored in memory) the video <fn>, which can be a URL. The video is saved in "/tmp/original.avi". '''
+
+        from urllib.parse import urlparse
+        import av
+    
+        if self.__is_http_url(fn):
+            response = requests.get(fn) # Download the video file (in memory)
+            if response.status_code == 200: # If the download was successful
+                fn = io.BytesIO(response.content) # Open the downloaded video as a byte stream
+                #input_size = len(fn)
+                req = urllib.request.Request(fn, method='HEAD')
+                f = urllib.request.urlopen(req)
+                input_size = int(f.headers['Content-Length'])
+        else:
+            input_size = os.path.getsize(fn)
+        self.input_bytes += input_size
+
+        cap = cv2.VideoCapture(fn)
+        self.N_imgs = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        digits = len(str(self.N_imgs))
+
+        vid = Video(self.N_imgs, img.size[1], img.size[0], "/tmp/img_")
+        logging.info(f"Read {input_size} bytes from {fn} with shape {vid}")
+
+        return vid
 
     def decode_read_fn(self, fn_without_extention):
         fn = fn_without_extention + self.file_extension
@@ -126,8 +202,10 @@ class CoDec:
         self.output_bytes += os.path.getsize(fn)
         logging.info(f"Written {os.path.getsize(fn)} bytes in {fn}")
 
-    def decode_write_fn(self, img, fn):
-        skimage_io.imsave(fn, img)
+    def decode_write_fn(self, vid, fn):
+        imgs = [e for e in os.listdir(vid.prefix)]
+        for i in imgs:
+            skimage_io.imsave(fn, img)
         self.output_bytes += os.path.getsize(fn)
         logging.info(f"Written {os.path.getsize(fn)} bytes in {fn} with shape {img.shape} and type {img.dtype}")
 
