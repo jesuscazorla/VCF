@@ -34,6 +34,7 @@ class CoDec(EVC.CoDec):
         super().__init__(args)
 
     def compress(self, vid):
+        '''Input a H.264 AVI-file and output a sequence of PNG images.'''
         container = av.open(fn)
         for frame in container.decode(video=0):
             img = frame.to_image()
@@ -46,6 +47,7 @@ class CoDec(EVC.CoDec):
         return compressed_vid
 
     def decompress(self, compressed_vid):
+        '''Input a sequence of PNG images and output a H.264 AVI-file.'''
         imgs = [i for i in os.listdir(compressed_vid.prefix)]
         
         container = av.open(DECODE_OUTPUT, 'w', format='avi')

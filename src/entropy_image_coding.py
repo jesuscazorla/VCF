@@ -1,5 +1,7 @@
-'''Shared code among the image entropy codecs. "Uncompressed" IO uses
-PNG.'''
+'''Shared code among the image entropy codecs. "Uncompressed" IO
+(i.e., the input of encode and the output of decode) uses PNG.
+
+'''
 
 import os
 import io

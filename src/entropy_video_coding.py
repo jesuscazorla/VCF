@@ -1,5 +1,8 @@
-'''Shared code among the video entropy codecs. "Uncompressed" IO uses
-lossless H.264 encapsulated in AVI.'''
+'''Shared code among the video entropy codecs. "Uncompressed" (i.e.,
+the input of encode and the output of decode) IO uses lossless H.264
+encapsulated in AVI.
+
+'''
 
 import os
 import io
@@ -180,8 +183,10 @@ class CoDec:
         cap = cv2.VideoCapture(fn)
         self.N_imgs = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         digits = len(str(self.N_imgs))
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-        vid = Video(self.N_imgs, img.size[1], img.size[0], "/tmp/img_")
+        vid = Video(self.N_imgs, height, width, "/tmp/img_")
         logging.info(f"Read {input_size} bytes from {fn} with shape {vid}")
 
         return vid
