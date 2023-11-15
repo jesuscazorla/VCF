@@ -1,6 +1,6 @@
 '''Shared code among the video entropy codecs. "Uncompressed" (i.e.,
 the input of encode and the output of decode) IO uses lossless H.264
-encapsulated in AVI.
+encapsulated in AVI. Videos are not loaded to memory, but only the required images.
 
 '''
 
@@ -54,36 +54,68 @@ class CoDec:
                 f.write(f"{N_frames}")
                 f.write(f"{BPP}")
         else:
-            vid = self.encode_read_fn("file:///tmp/original.avi")
-            y = self.encode_read_fn(self.args.output)
-            total_RMSE = 0
-            for i in vid:
-                total_RMSE += distortion.RMSE(i, y)
-            RMSE = total_RMSE / self.vid_shape[0]
-            logging.info(f"RMSE = {RMSE}")
-            with open(f"{self.args.input}_BPP.txt", 'r') as f:
-                N_frames = float(f.read())
-                BPP = float(f.read())
-            J = BPP + RMSE
-            logging.info(f"J = R + D = {J}")
+            if __debug__:
+                vid = self.encode_read_fn("file:///tmp/original.avi")
+                y = self.encode_read_fn(self.args.output)
+                total_RMSE = 0
+                for i in vid:
+                    total_RMSE += distortion.RMSE(i, y)
+                RMSE = total_RMSE / self.vid_shape[0]
+                logging.info(f"RMSE = {RMSE}")
+                with open(f"{self.args.input}_BPP.txt", 'r') as f:
+                    N_frames = float(f.read())
+                    BPP = float(f.read())
+                J = BPP + RMSE
+                logging.info(f"J = R + D = {J}")
 
     def encode(self):
         vid = self.encode_read()
         compressed_vid = self.compress(vid)
         self.encode_write(compressed_vid)
 
+    def encode_read(self):
+        '''Read the video specified in the class attribute args.input.'''
+        vid = self.encode_read_fn(self.args.input)
+        if __debug__:
+            self.decode_write_fn(vid, "/tmp/original.avi") # Save a copy for comparing later
+            self.output_bytes = 0
+        self.vid_shape = vid.shape
+        return vid
+
+    def encode_read_fn(self, fn):
+        '''"Read" (videos are not stored in memory) the video <fn>, which can be a URL. The video is saved in the file "/tmp/<fn>". '''
+
+        from urllib.parse import urlparse
+        import av
+    
+        if self.__is_http_url(fn):
+            response = requests.get(fn) # Download the video file (in memory)
+            if response.status_code == 200: # If the download was successful
+                fn = io.BytesIO(response.content) # Open the downloaded video as a byte stream
+                #input_size = len(fn)
+                req = urllib.request.Request(fn, method='HEAD')
+                f = urllib.request.urlopen(req)
+                input_size = int(f.headers['Content-Length'])
+        else:
+            input_size = os.path.getsize(fn)
+        self.input_bytes += input_size
+
+        cap = cv2.VideoCapture(fn)
+        self.N_imgs = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        digits = len(str(self.N_imgs))
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+        vid = Video(self.N_imgs, height, width, "/tmp/img_")
+        logging.info(f"Read {input_size} bytes from {fn} with shape {vid}")
+
+        return vid
+
     def decode(self):
         compressed_vid = self.decode_read()
         vid = self.decompress(compressed_vid)
         self.decode_write(vid)
 
-    def encode_read(self):
-        '''Read the video specified in the class attribute args.input.'''
-        vid = self.encode_read_fn(self.args.input)
-        self.decode_write_fn(vid, "/tmp/original.avi")
-        self.output_bytes = 0
-        self.vid_shape = vid.shape
-        return vid
 
     def decode_read(self):
         compressed_vid = self.decode_read_fn(self.args.input)
@@ -162,34 +194,7 @@ class CoDec:
             logging.info(f"")
         return Video(N_imgs, img.shape[0], img.shape[1], "/tmp/img_")
 
-    def encode_read_fn(self, fn):
-        '''"Read" (videos are not stored in memory) the video <fn>, which can be a URL. The video is saved in "/tmp/original.avi". '''
 
-        from urllib.parse import urlparse
-        import av
-    
-        if self.__is_http_url(fn):
-            response = requests.get(fn) # Download the video file (in memory)
-            if response.status_code == 200: # If the download was successful
-                fn = io.BytesIO(response.content) # Open the downloaded video as a byte stream
-                #input_size = len(fn)
-                req = urllib.request.Request(fn, method='HEAD')
-                f = urllib.request.urlopen(req)
-                input_size = int(f.headers['Content-Length'])
-        else:
-            input_size = os.path.getsize(fn)
-        self.input_bytes += input_size
-
-        cap = cv2.VideoCapture(fn)
-        self.N_imgs = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        digits = len(str(self.N_imgs))
-        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-        vid = Video(self.N_imgs, height, width, "/tmp/img_")
-        logging.info(f"Read {input_size} bytes from {fn} with shape {vid}")
-
-        return vid
 
     def decode_read_fn(self, fn_without_extention):
         fn = fn_without_extention + self.file_extension
