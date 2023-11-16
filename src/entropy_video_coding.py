@@ -23,11 +23,11 @@ from information_theory import distortion # pip install "information_theory @ gi
 class Video:
     '''A video is a sequence of files stored in "prefix".'''
 
-    def __init__(self, N_imgs, width, height, prefix):
+    def __init__(self, N_imgs, width, height, fn):
         self.N_imgs = N_imgs
         self.width = width
         self.height = height
-        self.prefix = prefix
+        self.fn = fn
         self.shape = (N_imgs, height, width)
 
 class CoDec:
@@ -71,16 +71,15 @@ class CoDec:
 
     def encode(self):
         vid = self.encode_read()
-        compressed_vid = self.compress(vid)
-        self.encode_write(compressed_vid)
+        compressed_vid = self.compress(self.args.input)
+        #self.encode_write(compressed_vid)
 
     def encode_read(self):
-        '''Read the video specified in the class attribute args.input.'''
+        '''"Read" the video specified in the class attribute args.input.'''
         vid = self.encode_read_fn(self.args.input)
         if __debug__:
             self.decode_write_fn(vid, "/tmp/original.avi") # Save a copy for comparing later
             self.output_bytes = 0
-        self.vid_shape = vid.shape
         return vid
 
     def __is_http_url(self, url):
@@ -110,13 +109,15 @@ class CoDec:
         self.input_bytes += input_size
 
         cap = cv2.VideoCapture(fn)
-        self.N_imgs = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        digits = len(str(self.N_imgs))
+        N_imgs = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        if __debug__:
+            self.N_imgs = N_imgs
+        digits = len(str(N_imgs))
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-        vid = Video(self.N_imgs, height, width, "/tmp/img_")
-        logging.info(f"Read {input_size} bytes from {fn} with shape {vid}")
+        vid = Video(N_imgs, height, width, "/tmp/img_")
+        logging.info(f"Read {input_size} bytes from {fn} with shape {vid.shape}")
 
         return vid
 
@@ -125,7 +126,7 @@ class CoDec:
         self.encode_write_fn(compressed_vid, self.args.output)
 
     def encode_write_fn(self, data, fn_without_extention):
-        data.seek(0)
+        #data.seek(0)
         fn = fn_without_extention + self.file_extension
         with open(fn, "wb") as output_file:
             output_file.write(data.read())
@@ -153,11 +154,16 @@ class CoDec:
         return data
 
     def decode_write_fn(self, vid, fn):
+        pass
+        '''
         imgs = [e for e in os.listdir(vid.prefix)]
         for i in imgs:
             skimage_io.imsave(fn, img)
         self.output_bytes += os.path.getsize(fn)
         logging.info(f"Written {os.path.getsize(fn)} bytes in {fn} with shape {img.shape} and type {img.dtype}")
+        '''
+
+###################################################
 
     def _encode_read_fn(self, fn):
         '''Read the video <fn>.'''

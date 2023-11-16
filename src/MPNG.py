@@ -1,4 +1,5 @@
-'''Motion PNG. Provides entropy Eecoding of video using PNG (Portable Network Graphics). '''
+'''Motion PNG. Inputs a .AVI file and outputs a sequence of images
+encoded in PNG (Portable Network Graphics), and viceversa.'''
 
 import io
 from skimage import io as skimage_io # pip install scikit-image
@@ -12,16 +13,16 @@ import av
 
 # Default IOs
 ENCODE_INPUT = "http://www.hpca.ual.es/~vruiz/videos/mobile_352x288x30x420x300.avi"
-ENCODE_OUTPUT = "/tmp/encoded"
-DECODE_INPUT = ENCODE_OUTPUT
+ENCODE_OUTPUT_PREFIX = "/tmp/encoded"
+DECODE_INPUT_PREFIX = ENCODE_OUTPUT_PREFIX
 DECODE_OUTPUT = "/tmp/decoded.avi"
 
 # Encoder parser
 parser.parser_encode.add_argument("-i", "--input", type=parser.int_or_str, help=f"Input video (default: {ENCODE_INPUT})", default=ENCODE_INPUT)
-parser.parser_encode.add_argument("-o", "--output", type=parser.int_or_str, help=f"Output video (default: {ENCODE_OUTPUT})", default=f"{ENCODE_OUTPUT}")
+parser.parser_encode.add_argument("-o", "--output", type=parser.int_or_str, help=f"Output video prefix (default: {ENCODE_OUTPUT_PREFIX})", default=f"{ENCODE_OUTPUT_PREFIX}")
 
 # Decoder parser
-parser.parser_decode.add_argument("-i", "--input", type=parser.int_or_str, help=f"Input video (default: {DECODE_INPUT})", default=f"{DECODE_INPUT}")
+parser.parser_decode.add_argument("-i", "--input", type=parser.int_or_str, help=f"Input video prefix (default: {DECODE_INPUT_PREFIX})", default=f"{DECODE_INPUT_PREFIX}")
 parser.parser_decode.add_argument("-o", "--output", type=parser.int_or_str, help=f"Output video (default: {DECODE_OUTPUT})", default=f"{DECODE_OUTPUT}")    
 
 parser.parser.parse_known_args()
@@ -35,7 +36,7 @@ class CoDec(EVC.CoDec):
 
     def compress(self, vid):
         '''Input a H.264 AVI-file and output a sequence of PNG images.'''
-        container = av.open(fn)
+        container = av.open(vid.fn)
         for frame in container.decode(video=0):
             img = frame.to_image()
             img_fn = os.path.join(ENCODE_OUTPUT, "_%04d.png" % frame.index)
