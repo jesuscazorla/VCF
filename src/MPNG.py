@@ -2,7 +2,7 @@
 encoded in PNG (Portable Network Graphics), and viceversa.'''
 
 import io
-#import os
+import os
 from skimage import io as skimage_io # pip install scikit-image
 import main
 import logging
@@ -39,13 +39,17 @@ class CoDec(EVC.CoDec):
     def compress(self, vid):
         '''Input a H.264 AVI-file and output a sequence of PNG images.'''
         container = av.open(vid.fn)
+        img_counter = 0
         for frame in container.decode(video=0):
             img = frame.to_image()
             img_fn = f"{ENCODE_OUTPUT_PREFIX}_%04d.png" % frame.index
             print(img_fn)
             img.save(img_fn)
+            if __debug__:
+                self.output_bytes += os.path.getsize(img_fn)
             # cv2.imwrite(img_fn, img)
-        compressed_vid = Video(vid.get_shape(), ENCODE_OUTPUT_PREFIX)
+            img_counter += 1
+        compressed_vid = Video(img_counter, *vid.get_shape()[1:], ENCODE_OUTPUT_PREFIX)
         return compressed_vid
 
     def decompress(self, compressed_vid):

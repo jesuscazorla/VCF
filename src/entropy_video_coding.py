@@ -49,12 +49,11 @@ class CoDec:
         logging.info(f"Total {self.input_bytes} bytes read")
         logging.info(f"Total {self.output_bytes} bytes written")
         if self.encoding:
-            N_frames = self.N_imgs
-            BPP = (self.output_bytes*8)/(self.shape[1]*self.shape[2])
-            logging.info(f"N_frames = {N_frames}")
+            BPP = (self.output_bytes*8)/(self.shape[0]*self.shape[1]*self.shape[2])
+            logging.info(f"N_frames = {self.N_imgs}")
             logging.info(f"rate = {BPP} bits/pixel")
             with open(f"{self.args.output}_BPP.txt", 'w') as f:
-                f.write(f"{N_frames}")
+                f.write(f"{self.N_imgs}")
                 f.write(f"{BPP}")
         else:
             if __debug__:
@@ -74,6 +73,7 @@ class CoDec:
     def encode(self):
         vid = self.encode_read()
         compressed_vid = self.compress(vid)
+        self.shape = compressed_vid.get_shape()
         #self.encode_write(compressed_vid)
 
     def encode_read(self):
@@ -112,7 +112,8 @@ class CoDec:
 
         cap = cv2.VideoCapture(fn)
         N_imgs = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        digits = len(str(N_imgs))
+        print(fn, N_imgs)
+        #digits = len(str(N_imgs))
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         if __debug__:
@@ -120,7 +121,7 @@ class CoDec:
             self.shape = (N_imgs, height, width)
 
         vid = Video(N_imgs, height, width, fn)
-        logging.info(f"Read {input_size} bytes from {fn} with shape {vid.get_shape()}")
+        logging.info(f"Read {input_size} bytes from {fn} with shape {vid.get_shape()[1:]}")
 
         return vid
 
