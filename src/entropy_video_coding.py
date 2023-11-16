@@ -23,12 +23,14 @@ from information_theory import distortion # pip install "information_theory @ gi
 class Video:
     '''A video is a sequence of files stored in "prefix".'''
 
-    def __init__(self, N_imgs, width, height, fn):
+    def __init__(self, N_imgs, height, width, fn):
         self.N_imgs = N_imgs
-        self.width = width
         self.height = height
+        self.width = width
         self.fn = fn
-        self.shape = (N_imgs, height, width)
+
+    def get_shape(self):
+        return self.N_imgs, self.height, self.width
 
 class CoDec:
 
@@ -71,7 +73,7 @@ class CoDec:
 
     def encode(self):
         vid = self.encode_read()
-        compressed_vid = self.compress(self.args.input)
+        compressed_vid = self.compress(vid)
         #self.encode_write(compressed_vid)
 
     def encode_read(self):
@@ -110,14 +112,15 @@ class CoDec:
 
         cap = cv2.VideoCapture(fn)
         N_imgs = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        if __debug__:
-            self.N_imgs = N_imgs
         digits = len(str(N_imgs))
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        if __debug__:
+            self.N_imgs = N_imgs
+            self.shape = (N_imgs, height, width)
 
-        vid = Video(N_imgs, height, width, "/tmp/img_")
-        logging.info(f"Read {input_size} bytes from {fn} with shape {vid.shape}")
+        vid = Video(N_imgs, height, width, fn)
+        logging.info(f"Read {input_size} bytes from {fn} with shape {vid.get_shape()}")
 
         return vid
 

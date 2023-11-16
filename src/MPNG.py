@@ -2,6 +2,7 @@
 encoded in PNG (Portable Network Graphics), and viceversa.'''
 
 import io
+#import os
 from skimage import io as skimage_io # pip install scikit-image
 import main
 import logging
@@ -9,6 +10,7 @@ import numpy as np
 import cv2 as cv
 import parser
 import entropy_video_coding as EVC
+from entropy_video_coding import Video
 import av
 
 # Default IOs
@@ -39,12 +41,11 @@ class CoDec(EVC.CoDec):
         container = av.open(vid.fn)
         for frame in container.decode(video=0):
             img = frame.to_image()
-            img_fn = os.path.join(ENCODE_OUTPUT, "_%04d.png" % frame.index)
+            img_fn = f"{ENCODE_OUTPUT_PREFIX}_%04d.png" % frame.index
             print(img_fn)
             img.save(img_fn)
             # cv2.imwrite(img_fn, img)
-        compressed_vid = vid.copy()
-        compressed_vid.prefix = ENCODE_OUTPUT
+        compressed_vid = Video(vid.get_shape(), ENCODE_OUTPUT_PREFIX)
         return compressed_vid
 
     def decompress(self, compressed_vid):
