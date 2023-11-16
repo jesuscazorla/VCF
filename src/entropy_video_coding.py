@@ -1,6 +1,7 @@
 '''Shared code among the video entropy codecs. "Uncompressed" (i.e.,
 the input of encode and the output of decode) IO uses lossless H.264
-encapsulated in AVI. Videos are not loaded to memory, but only the required images.
+encapsulated in AVI. Videos are not loaded to memory, but only the
+required images.
 
 '''
 
@@ -47,7 +48,7 @@ class CoDec:
         logging.info(f"Total {self.output_bytes} bytes written")
         if self.encoding:
             N_frames = self.N_imgs
-            BPP = (self.output_bytes*8)/(self.vid_shape[0]*self.vid_shape[1])
+            BPP = (self.output_bytes*8)/(self.shape[1]*self.shape[2])
             logging.info(f"N_frames = {N_frames}")
             logging.info(f"rate = {BPP} bits/pixel")
             with open(f"{self.args.output}_BPP.txt", 'w') as f:
@@ -82,8 +83,16 @@ class CoDec:
         self.vid_shape = vid.shape
         return vid
 
+    def __is_http_url(self, url):
+        try:
+            result = urlparse(url)
+            return all([result.scheme, result.netloc]) and result.scheme.lower() in ['http', 'https']
+        except ValueError:
+            return False
+        
     def encode_read_fn(self, fn):
-        '''"Read" (videos are not stored in memory) the video <fn>, which can be a URL. The video is saved in the file "/tmp/<fn>". '''
+        '''"Read" the video <fn>, which can be a URL. The video is
+        saved in the file "/tmp/<fn>".'''
 
         from urllib.parse import urlparse
         import av
@@ -111,30 +120,45 @@ class CoDec:
 
         return vid
 
+    def encode_write(self, compressed_vid):
+        '''Save to disk the video specified in the class attribute args.output.'''
+        self.encode_write_fn(compressed_vid, self.args.output)
+
+    def encode_write_fn(self, data, fn_without_extention):
+        data.seek(0)
+        fn = fn_without_extention + self.file_extension
+        with open(fn, "wb") as output_file:
+            output_file.write(data.read())
+        self.output_bytes += os.path.getsize(fn)
+        logging.info(f"Written {os.path.getsize(fn)} bytes in {fn}")
+
     def decode(self):
         compressed_vid = self.decode_read()
         vid = self.decompress(compressed_vid)
         self.decode_write(vid)
 
-
     def decode_read(self):
         compressed_vid = self.decode_read_fn(self.args.input)
         return compressed_vid
 
-    def encode_write(self, compressed_vid):
-        '''Save to disk the video specified in the class attribute args.output.'''
-        self.encode_write_fn(compressed_vid, self.args.output)
-
     def decode_write(self, vid):
         return self.decode_write_fn(vid, self.args.output)
 
-    def __is_http_url(self, url):
-        try:
-            result = urlparse(url)
-            return all([result.scheme, result.netloc]) and result.scheme.lower() in ['http', 'https']
-        except ValueError:
-            return False
-        
+    def decode_read_fn(self, fn_without_extention):
+        fn = fn_without_extention + self.file_extension
+        input_size = os.path.getsize(fn)
+        self.input_bytes += input_size
+        logging.info(f"Read {os.path.getsize(fn)} bytes from {fn}")
+        data = open(fn, "rb").read()
+        return data
+
+    def decode_write_fn(self, vid, fn):
+        imgs = [e for e in os.listdir(vid.prefix)]
+        for i in imgs:
+            skimage_io.imsave(fn, img)
+        self.output_bytes += os.path.getsize(fn)
+        logging.info(f"Written {os.path.getsize(fn)} bytes in {fn} with shape {img.shape} and type {img.dtype}")
+
     def _encode_read_fn(self, fn):
         '''Read the video <fn>.'''
 
@@ -193,29 +217,4 @@ class CoDec:
             N_imgs = len(reader)
             logging.info(f"")
         return Video(N_imgs, img.shape[0], img.shape[1], "/tmp/img_")
-
-
-
-    def decode_read_fn(self, fn_without_extention):
-        fn = fn_without_extention + self.file_extension
-        input_size = os.path.getsize(fn)
-        self.input_bytes += input_size
-        logging.info(f"Read {os.path.getsize(fn)} bytes from {fn}")
-        data = open(fn, "rb").read()
-        return data
-
-    def encode_write_fn(self, data, fn_without_extention):
-        data.seek(0)
-        fn = fn_without_extention + self.file_extension
-        with open(fn, "wb") as output_file:
-            output_file.write(data.read())
-        self.output_bytes += os.path.getsize(fn)
-        logging.info(f"Written {os.path.getsize(fn)} bytes in {fn}")
-
-    def decode_write_fn(self, vid, fn):
-        imgs = [e for e in os.listdir(vid.prefix)]
-        for i in imgs:
-            skimage_io.imsave(fn, img)
-        self.output_bytes += os.path.getsize(fn)
-        logging.info(f"Written {os.path.getsize(fn)} bytes in {fn} with shape {img.shape} and type {img.dtype}")
 
