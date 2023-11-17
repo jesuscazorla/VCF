@@ -1,4 +1,4 @@
-'''Motion PNG. Inputs a .AVI file and outputs a sequence of images
+'''Motion PNG. Inputs a .AVI file and outputs a sequence of frames
 encoded in PNG (Portable Network Graphics), and viceversa.'''
 
 import io
@@ -36,21 +36,32 @@ class CoDec(EVC.CoDec):
     def __init__(self, args):
         super().__init__(args)
 
-    def compress(self, vid):
-        '''Input a H.264 AVI-file and output a sequence of PNG images.'''
-        container = av.open(vid.fn)
+    def compress(self, fn):
+        '''Input a H.264 AVI-file and output a sequence of PNG frames.'''
+        logging.info(f"Encoding {fn}")
+        container = av.open(fn)
         img_counter = 0
         for frame in container.decode(video=0):
             img = frame.to_image()
+            print(type(frame))
             img_fn = f"{ENCODE_OUTPUT_PREFIX}_%04d.png" % frame.index
-            print(img_fn)
+            #print(img_fn)
             img.save(img_fn)
             if __debug__:
-                self.output_bytes += os.path.getsize(img_fn)
+                I_bytes = len(frame.to_bytes())
+                O_bytes = os.path.getsize(img_fn)
+                self.output_bytes += O_bytes
+                self.input_bytes += I_bytes
+                logging.info(f"{img_fn} {img.size} {img.mode} {I_bytes} {O_bytes}")
+            else:
+                logging.info(f"{img_fn} {img.size} {img.mode}")
             # cv2.imwrite(img_fn, img)
             img_counter += 1
-        compressed_vid = Video(img_counter, *vid.get_shape()[1:], ENCODE_OUTPUT_PREFIX)
-        return compressed_vid
+        #compressed_vid = Video(img_counter, *vid.get_shape()[1:], ENCODE_OUTPUT_PREFIX)
+        self.N_frames = img_counter
+        self.width, self.height = img.size
+        self.N_channels = len(img.mode)
+        #return compressed_vid
 
     def decompress(self, compressed_vid):
         '''Input a sequence of PNG images and output a H.264 AVI-file.'''

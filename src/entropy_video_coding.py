@@ -23,14 +23,14 @@ from information_theory import distortion # pip install "information_theory @ gi
 class Video:
     '''A video is a sequence of files stored in "prefix".'''
 
-    def __init__(self, N_imgs, height, width, fn):
-        self.N_imgs = N_imgs
+    def __init__(self, N_frames, height, width, fn):
+        self.N_frames = N_frames
         self.height = height
         self.width = width
         self.fn = fn
 
     def get_shape(self):
-        return self.N_imgs, self.height, self.width
+        return self.N_frames, self.height, self.width
 
 class CoDec:
 
@@ -49,11 +49,11 @@ class CoDec:
         logging.info(f"Total {self.input_bytes} bytes read")
         logging.info(f"Total {self.output_bytes} bytes written")
         if self.encoding:
-            BPP = (self.output_bytes*8)/(self.shape[0]*self.shape[1]*self.shape[2])
-            logging.info(f"N_frames = {self.N_imgs}")
+            BPP = (self.output_bytes*8)/(self.width*self.height*self.N_channels)
+            logging.info(f"N_frames = {self.N_frames}")
             logging.info(f"rate = {BPP} bits/pixel")
             with open(f"{self.args.output}_BPP.txt", 'w') as f:
-                f.write(f"{self.N_imgs}")
+                f.write(f"{self.N_frames}")
                 f.write(f"{BPP}")
         else:
             if __debug__:
@@ -71,9 +71,10 @@ class CoDec:
                 logging.info(f"J = R + D = {J}")
 
     def encode(self):
-        vid = self.encode_read()
-        compressed_vid = self.compress(vid)
-        self.shape = compressed_vid.get_shape()
+        #vid = self.encode_read()
+        #compressed_vid = self.compress(vid)
+        self.compress(self.args.input)
+        #self.shape = compressed_vid.get_shape()
         #self.encode_write(compressed_vid)
 
     def encode_read(self):
@@ -93,34 +94,44 @@ class CoDec:
         
     def encode_read_fn(self, fn):
         '''"Read" the video <fn>, which can be a URL. The video is
-        saved in the file "/tmp/<fn>".'''
+        saved in "/tmp/<fn>".'''
 
         from urllib.parse import urlparse
         import av
     
         if self.__is_http_url(fn):
-            response = requests.get(fn) # Download the video file (in memory)
+            response = requests.get(fn, stream=True)
             if response.status_code == 200: # If the download was successful
-                fn = io.BytesIO(response.content) # Open the downloaded video as a byte stream
+                input_size = 0
+                #file_path = os.path.join("/tmp", fn)
+                file_path = "/tmp/original.avi"
+                with open(file_path, 'wb') as file:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        if chunk:
+                            file.write(chunk)
+                            input_size += 8192
+                            print('.', end='', flush=True)
+                print("\nVideo downloaded")
+                #fn = io.BytesIO(response.content) # Open the downloaded video as a byte stream
                 #input_size = len(fn)
-                req = urllib.request.Request(fn, method='HEAD')
-                f = urllib.request.urlopen(req)
-                input_size = int(f.headers['Content-Length'])
+                #req = urllib.request.Request(fn, method='HEAD')
+                #f = urllib.request.urlopen(req)
+                #input_size = int(f.headers['Content-Length'])
         else:
             input_size = os.path.getsize(fn)
         self.input_bytes += input_size
 
         cap = cv2.VideoCapture(fn)
-        N_imgs = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        print(fn, N_imgs)
-        #digits = len(str(N_imgs))
+        N_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        print(fn, N_frames)
+        #digits = len(str(N_frames))
         width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         if __debug__:
-            self.N_imgs = N_imgs
-            self.shape = (N_imgs, height, width)
+            self.N_frames = N_frames
+            self.shape = (N_frames, height, width)
 
-        vid = Video(N_imgs, height, width, fn)
+        vid = Video(N_frames, height, width, fn)
         logging.info(f"Read {input_size} bytes from {fn} with shape {vid.get_shape()[1:]}")
 
         return vid
@@ -160,8 +171,8 @@ class CoDec:
     def decode_write_fn(self, vid, fn):
         pass
         '''
-        imgs = [e for e in os.listdir(vid.prefix)]
-        for i in imgs:
+        frames = [e for e in os.listdir(vid.prefix)]
+        for i in frames:
             skimage_io.imsave(fn, img)
         self.output_bytes += os.path.getsize(fn)
         logging.info(f"Written {os.path.getsize(fn)} bytes in {fn} with shape {img.shape} and type {img.dtype}")
@@ -182,8 +193,8 @@ class CoDec:
             input_size = os.path.getsize(fn)
         self.input_bytes += input_size 
         cap = cv2.VideoCapture(fn)
-        N_imgs = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        digits = len(str(N_imgs))
+        N_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        digits = len(str(N_frames))
         img_counter = 0
         while True:
             ret, img = cap.read()
@@ -195,7 +206,7 @@ class CoDec:
             img_fn = os.path.join("/tmp", f"img_{img_counter:0{digits}d}.png")
             img_counter += 1
             cv2.imwrite(img_fn, img)
-        return Video(N_imgs, img.shape[0], img.shape[1], "/tmp/img_")
+        return Video(N_frames, img.shape[0], img.shape[1], "/tmp/img_")
 
     def _encode_read_fn(self, fn):
         '''Read the video <fn>.'''
@@ -213,8 +224,8 @@ class CoDec:
         self.input_bytes += input_size
 
         cap = cv2.VideoCapture(fn)
-        N_imgs = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-        digits = len(str(N_imgs))
+        N_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        digits = len(str(N_frames))
 
         with ffmpeg.get_reader(fn) as reader:
             for i, img in enumerate(reader):
@@ -224,7 +235,7 @@ class CoDec:
                 img_fn = os.path.join("/tmp", f"img_{img_counter:0{digits}d}.png")
                 img_counter += 1
                 cv2.imwrite(img_fn, img)
-            N_imgs = len(reader)
+            N_frames = len(reader)
             logging.info(f"")
-        return Video(N_imgs, img.shape[0], img.shape[1], "/tmp/img_")
+        return Video(N_frames, img.shape[0], img.shape[1], "/tmp/frame_")
 
