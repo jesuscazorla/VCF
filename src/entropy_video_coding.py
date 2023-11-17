@@ -64,20 +64,23 @@ class CoDec:
                     f.write(f"{BPP}\n")
             else:
                 with open(f"{self.args.input}.txt", 'r') as f:
-                    original_file = f.readline()
+                    original_file = f.readline().strip()
                     logging.info(f"original_file={original_file}")
-                    N_frames = float(f.readline())
+                    N_frames = float(f.readline().strip())
                     logging.info(f"N_frames={N_frames}")
-                    BPP = float(f.readline())
+                    BPP = float(f.readline().strip())
                     logging.info(f"BPP={BPP}")
                 container_x = av.open(original_file)
                 container_y = av.open(self.args.output)
                 img_counter = 0
                 total_RMSE = 0
+                logging.info("Computing RD performance ...")
                 for frame_x, frame_y in zip(container_x.decode(video=0), container_y.decode(video=0)):
-                    img_x = frame_x.to_image()
-                    img_y = frame_y.to_image()
+                    img_x = np.array(frame_x.to_image())
+                    img_y = np.array(frame_y.to_image())
                     total_RMSE += distortion.RMSE(img_x, img_y)
+                    print(f"{img_counter}/{self.N_frames}", end='\r', flush=True)
+                    img_counter += 1
                 RMSE = total_RMSE / self.N_frames
                 logging.info(f"RMSE = {RMSE}")
 
