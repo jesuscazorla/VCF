@@ -48,9 +48,12 @@ class CoDec:
     def __del__(self):
         logging.info(f"Total {self.input_bytes} bytes read")
         logging.info(f"Total {self.output_bytes} bytes written")
+        logging.info(f"N_frames={self.N_frames}")
+        logging.info(f"width={self.width}")
+        logging.info(f"height={self.height}")
+        logging.info(f"N_channels={self.N_channels}")
         if self.encoding:
-            BPP = (self.output_bytes*8)/(self.width*self.height*self.N_channels)
-            logging.info(f"N_frames = {self.N_frames}")
+            BPP = (self.output_bytes*8)/(self.N_frames*self.width*self.height)
             logging.info(f"rate = {BPP} bits/pixel")
             with open(f"{self.args.output}_BPP.txt", 'w') as f:
                 f.write(f"{self.N_frames}")

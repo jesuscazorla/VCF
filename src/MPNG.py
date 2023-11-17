@@ -37,6 +37,29 @@ class CoDec(EVC.CoDec):
         super().__init__(args)
 
     def compress(self, fn):
+        logging.info(f"Encoding {fn}")
+        container = av.open(fn)
+        img_counter = 0
+        for packet in container.demux():
+            if __debug__:
+                self.input_bytes += packet.size
+            for frame in packet.decode():
+                img = frame.to_image()
+                img_counter += 1
+                img_fn = f"{ENCODE_OUTPUT_PREFIX}_%04d.png" % frame.index
+                #print(img_fn)
+                img.save(img_fn)
+                if __debug__:
+                    O_bytes = os.path.getsize(img_fn)
+                    self.output_bytes += O_bytes
+                    logging.info(f"{img_fn} {img.size} {img.mode} in={packet.size} out={O_bytes}")
+                else:
+                    logging.info(f"{img_fn} {img.size} {img.mode} in={packet.size}")
+        self.N_frames = img_counter
+        self.width, self.height = img.size
+        self.N_channels = len(img.mode)
+
+    def _compress(self, fn):
         '''Input a H.264 AVI-file and output a sequence of PNG frames.'''
         logging.info(f"Encoding {fn}")
         container = av.open(fn)
