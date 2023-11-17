@@ -44,6 +44,7 @@ class CoDec:
         logging.debug(f"self.encoding = {self.encoding}")
         self.input_bytes = 0
         self.output_bytes = 0
+        self.framerate = 30
 
     def __del__(self):
         logging.info(f"Total {self.input_bytes} bytes read")
@@ -52,15 +53,16 @@ class CoDec:
         logging.info(f"width={self.width}")
         logging.info(f"height={self.height}")
         logging.info(f"N_channels={self.N_channels}")
-        if self.encoding:
-            BPP = (self.output_bytes*8)/(self.N_frames*self.width*self.height)
-            logging.info(f"rate = {BPP} bits/pixel")
-            with open(f"{self.args.output}_BPP.txt", 'w') as f:
-                f.write(f"{self.N_frames}")
-                f.write(f"{BPP}")
-        else:
-            if __debug__:
-                vid = self.encode_read_fn("file:///tmp/original.avi")
+        if __debug__:
+            if self.encoding:
+                BPP = (self.output_bytes*8)/(self.N_frames*self.width*self.height)
+                logging.info(f"Encoding (output) rate = {BPP} bits/pixel")
+                with open(f"{self.args.output}_BPP.txt", 'w') as f:
+                    f.write(f"{self.N_frames}\n")
+                    f.write(f"{BPP}\n")
+            else:
+                # Hay que leer una a una las imágenes de ambos vídeos
+                vid = self.encode_read_fn("/tmp/original.avi")
                 y = self.encode_read_fn(self.args.output)
                 total_RMSE = 0
                 for i in vid:
@@ -76,11 +78,11 @@ class CoDec:
     def encode(self):
         #vid = self.encode_read()
         #compressed_vid = self.compress(vid)
-        self.compress(self.args.input)
+        self.compress()
         #self.shape = compressed_vid.get_shape()
         #self.encode_write(compressed_vid)
 
-    def encode_read(self):
+    def _encode_read(self):
         '''"Read" the video specified in the class attribute args.input.'''
         vid = self.encode_read_fn(self.args.input)
         if __debug__:
@@ -95,7 +97,7 @@ class CoDec:
         except ValueError:
             return False
         
-    def encode_read_fn(self, fn):
+    def _encode_read_fn(self, fn):
         '''"Read" the video <fn>, which can be a URL. The video is
         saved in "/tmp/<fn>".'''
 
@@ -139,11 +141,11 @@ class CoDec:
 
         return vid
 
-    def encode_write(self, compressed_vid):
+    def _encode_write(self, compressed_vid):
         '''Save to disk the video specified in the class attribute args.output.'''
         self.encode_write_fn(compressed_vid, self.args.output)
 
-    def encode_write_fn(self, data, fn_without_extention):
+    def _encode_write_fn(self, data, fn_without_extention):
         #data.seek(0)
         fn = fn_without_extention + self.file_extension
         with open(fn, "wb") as output_file:
@@ -152,18 +154,19 @@ class CoDec:
         logging.info(f"Written {os.path.getsize(fn)} bytes in {fn}")
 
     def decode(self):
-        compressed_vid = self.decode_read()
-        vid = self.decompress(compressed_vid)
-        self.decode_write(vid)
+        #compressed_vid = self.decode_read()
+        #vid = self.decompress(compressed_vid)
+        self.decompress()
+        #self.decode_write(vid)
 
-    def decode_read(self):
+    def _decode_read(self):
         compressed_vid = self.decode_read_fn(self.args.input)
         return compressed_vid
 
-    def decode_write(self, vid):
+    def _decode_write(self, vid):
         return self.decode_write_fn(vid, self.args.output)
 
-    def decode_read_fn(self, fn_without_extention):
+    def _decode_read_fn(self, fn_without_extention):
         fn = fn_without_extention + self.file_extension
         input_size = os.path.getsize(fn)
         self.input_bytes += input_size
@@ -171,7 +174,7 @@ class CoDec:
         data = open(fn, "rb").read()
         return data
 
-    def decode_write_fn(self, vid, fn):
+    def _decode_write_fn(self, vid, fn):
         pass
         '''
         frames = [e for e in os.listdir(vid.prefix)]

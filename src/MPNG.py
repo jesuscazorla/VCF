@@ -12,6 +12,7 @@ import parser
 import entropy_video_coding as EVC
 from entropy_video_coding import Video
 import av
+from PIL import Image
 
 # Default IOs
 ENCODE_INPUT = "http://www.hpca.ual.es/~vruiz/videos/mobile_352x288x30x420x300.avi"
@@ -21,10 +22,10 @@ DECODE_OUTPUT = "/tmp/decoded.avi"
 
 # Encoder parser
 parser.parser_encode.add_argument("-i", "--input", type=parser.int_or_str, help=f"Input video (default: {ENCODE_INPUT})", default=ENCODE_INPUT)
-parser.parser_encode.add_argument("-o", "--output", type=parser.int_or_str, help=f"Output video prefix (default: {ENCODE_OUTPUT_PREFIX})", default=f"{ENCODE_OUTPUT_PREFIX}")
+parser.parser_encode.add_argument("-o", "--output", type=parser.int_or_str, help=f"Prefix of the output sequence of frames (default: {ENCODE_OUTPUT_PREFIX})", default=f"{ENCODE_OUTPUT_PREFIX}")
 
 # Decoder parser
-parser.parser_decode.add_argument("-i", "--input", type=parser.int_or_str, help=f"Input video prefix (default: {DECODE_INPUT_PREFIX})", default=f"{DECODE_INPUT_PREFIX}")
+parser.parser_decode.add_argument("-i", "--input", type=parser.int_or_str, help=f"Prefix of the input sequence of frames (default: {DECODE_INPUT_PREFIX})", default=f"{DECODE_INPUT_PREFIX}")
 parser.parser_decode.add_argument("-o", "--output", type=parser.int_or_str, help=f"Output video (default: {DECODE_OUTPUT})", default=f"{DECODE_OUTPUT}")    
 
 parser.parser.parse_known_args()
@@ -36,7 +37,9 @@ class CoDec(EVC.CoDec):
     def __init__(self, args):
         super().__init__(args)
 
-    def compress(self, fn):
+    def compress(self):
+        '''Input a H.264 AVI-file and output a sequence of PNG frames.'''
+        fn = self.args.input
         logging.info(f"Encoding {fn}")
         container = av.open(fn)
         img_counter = 0
@@ -46,7 +49,8 @@ class CoDec(EVC.CoDec):
             for frame in packet.decode():
                 img = frame.to_image()
                 img_counter += 1
-                img_fn = f"{ENCODE_OUTPUT_PREFIX}_%04d.png" % frame.index
+                #img_fn = f"{ENCODE_OUTPUT_PREFIX}_%04d.png" % frame.index
+                img_fn = f"{self.args.output}_%04d.png" % frame.index
                 #print(img_fn)
                 img.save(img_fn)
                 if __debug__:
@@ -60,7 +64,7 @@ class CoDec(EVC.CoDec):
         self.N_channels = len(img.mode)
 
     def _compress(self, fn):
-        '''Input a H.264 AVI-file and output a sequence of PNG frames.'''
+        
         logging.info(f"Encoding {fn}")
         container = av.open(fn)
         img_counter = 0
@@ -86,24 +90,36 @@ class CoDec(EVC.CoDec):
         self.N_channels = len(img.mode)
         #return compressed_vid
 
-    def decompress(self, compressed_vid):
+    def decompress(self):
         '''Input a sequence of PNG images and output a H.264 AVI-file.'''
-        imgs = [i for i in os.listdir(compressed_vid.prefix)]
+        imgs = sorted(os.path.join("/tmp", file)
+            for file in os.listdir("/tmp") if file.lower().startswith("encoded".lower()) and file.lower().endswith(".png".lower()))
         
-        container = av.open(DECODE_OUTPUT, 'w', format='avi')
-        video_stream = container.add_stream('libx264', rate=framerate)
-        img_0 = Image.open(os.path.join(ENCODE_INPUT, "_0000.png")).convert('RGB')
+        #imgs = [i for i in os.listdir(self.args.input) if i.lower().endswith('.png')]
+        
+        container = av.open(self.args.output, 'w', format='avi')
+        video_stream = container.add_stream('libx264', rate=self.framerate)
+        video_stream.options = {'crf': '0', 'preset': 'veryslow'}
+        img_0 = Image.open("/tmp/encoded_0000.png").convert('RGB')
         width, height = img_0.size
         video_stream.width = width
         video_stream.height = height
+        self.width, self.height = img_0.size
+        self.N_channels = len(img_0.mode)
+        img_counter = 0
+        #print(imgs)
         for i in imgs:
-            frame = av.VideoFrame.from_image(i)
+            img = Image.open(i)
+            img_counter += 1
+            logging.info(f"Decoding frame {img_counter}")
+            frame = av.VideoFrame.from_image(img)
             packet = video_stream.encode(frame)
             container.mux(packet)
         container.close()
-        vid = compressed_vid
-        vid.prefix = DECODE_OUTPUT
-        return vid
+        self.N_frames = img_counter
+        #vid = compressed_vid
+        #vid.prefix = DECODE_OUTPUT
+        #return vid
 
 if __name__ == "__main__":
     main.main(parser.parser, logging, CoDec)
