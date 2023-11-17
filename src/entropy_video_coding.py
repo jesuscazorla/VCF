@@ -16,7 +16,8 @@ import cv2
 import main
 import urllib
 from urllib.parse import urlparse
-import requests
+#import requests
+import av
 
 from information_theory import distortion # pip install "information_theory @ git+https://github.com/vicente-gonzalez-ruiz/information_theory"
 
@@ -57,21 +58,29 @@ class CoDec:
             if self.encoding:
                 BPP = (self.output_bytes*8)/(self.N_frames*self.width*self.height)
                 logging.info(f"Encoding (output) rate = {BPP} bits/pixel")
-                with open(f"{self.args.output}_BPP.txt", 'w') as f:
+                with open(f"{self.args.output}.txt", 'w') as f:
+                    f.write(f"{self.args.input}\n")
                     f.write(f"{self.N_frames}\n")
                     f.write(f"{BPP}\n")
             else:
-                # Hay que leer una a una las imágenes de ambos vídeos
-                vid = self.encode_read_fn("/tmp/original.avi")
-                y = self.encode_read_fn(self.args.output)
+                with open(f"{self.args.input}.txt", 'r') as f:
+                    original_file = f.readline()
+                    logging.info(f"original_file={original_file}")
+                    N_frames = float(f.readline())
+                    logging.info(f"N_frames={N_frames}")
+                    BPP = float(f.readline())
+                    logging.info(f"BPP={BPP}")
+                container_x = av.open(original_file)
+                container_y = av.open(self.args.output)
+                img_counter = 0
                 total_RMSE = 0
-                for i in vid:
-                    total_RMSE += distortion.RMSE(i, y)
-                RMSE = total_RMSE / self.vid_shape[0]
+                for frame_x, frame_y in zip(container_x.decode(video=0), container_y.decode(video=0)):
+                    img_x = frame_x.to_image()
+                    img_y = frame_y.to_image()
+                    total_RMSE += distortion.RMSE(img_x, img_y)
+                RMSE = total_RMSE / self.N_frames
                 logging.info(f"RMSE = {RMSE}")
-                with open(f"{self.args.input}_BPP.txt", 'r') as f:
-                    N_frames = float(f.read())
-                    BPP = float(f.read())
+
                 J = BPP + RMSE
                 logging.info(f"J = R + D = {J}")
 

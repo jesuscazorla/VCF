@@ -7,7 +7,7 @@ from skimage import io as skimage_io # pip install scikit-image
 import main
 import logging
 import numpy as np
-import cv2 as cv
+import cv2 as cv # pip install opencv-python
 import parser
 import entropy_video_coding as EVC
 from entropy_video_coding import Video
@@ -30,7 +30,7 @@ parser.parser_decode.add_argument("-o", "--output", type=parser.int_or_str, help
 
 parser.parser.parse_known_args()
 
-COMPRESSION_LEVEL = 9
+#COMPRESSION_LEVEL = 9
 
 class CoDec(EVC.CoDec):
 
@@ -56,9 +56,9 @@ class CoDec(EVC.CoDec):
                 if __debug__:
                     O_bytes = os.path.getsize(img_fn)
                     self.output_bytes += O_bytes
-                    logging.info(f"{img_fn} {img.size} {img.mode} in={packet.size} out={O_bytes}")
+                    logging.info(f"Generating frame {img_fn} {img.size} {img.mode} in={packet.size} out={O_bytes}")
                 else:
-                    logging.info(f"{img_fn} {img.size} {img.mode} in={packet.size}")
+                    logging.info(f"Generating frame {img_fn} {img.size} {img.mode} in={packet.size}")
         self.N_frames = img_counter
         self.width, self.height = img.size
         self.N_channels = len(img.mode)
@@ -111,7 +111,7 @@ class CoDec(EVC.CoDec):
         for i in imgs:
             img = Image.open(i)
             img_counter += 1
-            logging.info(f"Decoding frame {img_counter}")
+            logging.info(f"Decoding frame {img_counter} into {self.args.output}")
             frame = av.VideoFrame.from_image(img)
             packet = video_stream.encode(frame)
             container.mux(packet)
