@@ -94,6 +94,8 @@ class CoDec(EC.CoDec):
                         img.shape[1]//self.BS)
         #labels = labels.astype(np.uint8).reshape(labels_shape)
         labels = labels.reshape(labels_shape)
+        #print("--------", np.min(labels), np.max(labels))
+        labels = labels.astype(np.uint16)
         centroids = centroids.reshape(centroids.shape[0], self.BS*self.BS, img.shape[2])#.astype(np.uint8)
         #compressed_centroids = self.compress(centroids)
         #self.encode_write_fn(compressed_centroids, self.output + "_centroids")
