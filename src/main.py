@@ -1,5 +1,6 @@
 def main(parser, logging, CoDec):
-    parser.description = __doc__
+    #parser.description = __doc__
+    #parser.description = "hola"
     args = parser.parse_known_args()[0]
     #args = parser.parse_args()
     print("main", args)
