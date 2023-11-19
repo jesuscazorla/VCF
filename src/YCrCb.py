@@ -4,6 +4,8 @@ import numpy as np
 import logging
 import main
 import importlib
+with open("/tmp/description.txt", 'w') as f:
+    f.write(__doc__)
 import parser
 
 from color_transforms.YCrCb import from_RGB # pip install "color_transforms @ git+https://github.com/vicente-gonzalez-ruiz/color_transforms"

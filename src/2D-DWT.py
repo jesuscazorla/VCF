@@ -1,4 +1,4 @@
-'''Exploiting spatial (perceptual) redundancy with the 2D dyadic Discrete Wavelet Transform.'''
+'''Exploiting spatial redundancy with the 2D dyadic Discrete Wavelet Transform.'''
 
 import io
 from skimage import io as skimage_io # pip install scikit-image
@@ -7,6 +7,8 @@ import pywt # pip install pywavelets
 import os
 import logging
 import main
+with open("/tmp/description.txt", 'w') as f:
+    f.write(__doc__)
 import parser
 import importlib
 

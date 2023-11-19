@@ -7,6 +7,8 @@ import numpy as np
 import gzip
 import logging
 import main
+with open("/tmp/description.txt", 'w') as f:
+    f.write(__doc__)
 import parser
 
 # pip install "scalar_quantization @ git+https://github.com/vicente-gonzalez-ruiz/scalar_quantization"

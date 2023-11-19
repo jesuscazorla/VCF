@@ -7,6 +7,8 @@ import pywt # pip install pywavelets
 import os
 import logging
 import main
+with open("/tmp/description.txt", 'w') as f:
+    f.write(__doc__)
 import parser
 import importlib
 
@@ -23,18 +25,18 @@ default_block_size = 8
 default_CT = "YCoCg"
 perceptual_quantization = False
 
-_parser, parser_encode, parser_decode = parser.create_parser(description=__doc__)
+#_parser, parser_encode, parser_decode = parser.create_parser(description=__doc__)
 
-parser_encode.add_argument("-B", "--block_size_DCT", type=parser.int_or_str, help=f"Block size (default: {default_block_size})", default=default_block_size)
-parser_encode.add_argument("-t", "--color_transform", type=parser.int_or_str, help=f"Color transform (default: \"{default_CT}\")", default=default_CT)
-parser_encode.add_argument("-p", "--perceptual_quantization", action='store_true', help=f"Use perceptual quantization (default: \"{perceptual_quantization}\")", default=perceptual_quantization)
-parser_encode.add_argument("-L", "--Lambda", type=parser.int_or_str, help="Relative weight between the rate and the distortion. If provided (float), the block size is RD-optimized between {2**i; i=1,2,3,4,5,6,7}. For example, if Lambda=1.0, then the rate and the distortion have the same weight.")
+parser.parser_encode.add_argument("-B", "--block_size_DCT", type=parser.int_or_str, help=f"Block size (default: {default_block_size})", default=default_block_size)
+parser.parser_encode.add_argument("-t", "--color_transform", type=parser.int_or_str, help=f"Color transform (default: \"{default_CT}\")", default=default_CT)
+parser.parser_encode.add_argument("-p", "--perceptual_quantization", action='store_true', help=f"Use perceptual quantization (default: \"{perceptual_quantization}\")", default=perceptual_quantization)
+parser.parser_encode.add_argument("-L", "--Lambda", type=parser.int_or_str, help="Relative weight between the rate and the distortion. If provided (float), the block size is RD-optimized between {2**i; i=1,2,3,4,5,6,7}. For example, if Lambda=1.0, then the rate and the distortion have the same weight.")
 
-parser_decode.add_argument("-B", "--block_size_DCT", type=parser.int_or_str, help=f"Block size (default: {default_block_size})", default=default_block_size)
-parser_decode.add_argument("-t", "--color_transform", type=parser.int_or_str, help=f"Color transform (default: \"{default_CT}\")", default=default_CT)
-parser_decode.add_argument("-p", "--perceptual_quantization", action='store_true', help=f"Use perceptual dequantization (default: \"{perceptual_quantization}\")", default=perceptual_quantization)
+parser.parser_decode.add_argument("-B", "--block_size_DCT", type=parser.int_or_str, help=f"Block size (default: {default_block_size})", default=default_block_size)
+parser.parser_decode.add_argument("-t", "--color_transform", type=parser.int_or_str, help=f"Color transform (default: \"{default_CT}\")", default=default_CT)
+parser.parser_decode.add_argument("-p", "--perceptual_quantization", action='store_true', help=f"Use perceptual dequantization (default: \"{perceptual_quantization}\")", default=perceptual_quantization)
 
-args = _parser.parse_known_args()[0]
+args = parser.parser.parse_known_args()[0]
 CT = importlib.import_module(args.color_transform)
 
 class CoDec(CT.CoDec):
@@ -237,5 +239,5 @@ if __name__ == "__main__":
     #parser.description = __doc__
     #parser.parser.description = __doc__
     #parser.description = "Descripción"
-    #main.main(parser.parser, logging, CoDec)
-    main.main(my_parser, logging, CoDec)
+    main.main(parser.parser, logging, CoDec)
+    #main.main(_parser, logging, CoDec)

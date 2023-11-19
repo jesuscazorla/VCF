@@ -4,6 +4,8 @@ import os
 import numpy as np
 import logging
 import main
+with open("/tmp/description.txt", 'w') as f:
+    f.write(__doc__)
 import parser
 from sklearn import cluster
 

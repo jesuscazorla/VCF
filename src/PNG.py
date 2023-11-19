@@ -6,6 +6,8 @@ import main
 import logging
 import numpy as np
 import cv2 as cv
+with open("/tmp/description.txt", 'w') as f:
+    f.write(__doc__)
 import parser
 import entropy_image_coding as EIC
 
@@ -14,6 +16,8 @@ ENCODE_INPUT = "http://www.hpca.ual.es/~vruiz/images/lena.png"
 ENCODE_OUTPUT = "/tmp/encoded" # The file extension is decided in run-time
 DECODE_INPUT = ENCODE_OUTPUT
 DECODE_OUTPUT = "/tmp/decoded.png"
+
+#_parser, parser_encode, parser_decode = parser.create_parser(description=__doc__)
 
 # Encoder parser
 parser.parser_encode.add_argument("-i", "--input", type=parser.int_or_str, help=f"Input image (default: {ENCODE_INPUT})", default=ENCODE_INPUT)

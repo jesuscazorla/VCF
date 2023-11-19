@@ -27,13 +27,17 @@ class CustomArgumentParser(argparse.ArgumentParser):
         #print("\nThis help only shows information about the top-level parameters.\nTo get information about lower-level parameters, use:\n\"python lower-level_module.py {encode|decode} -h\".\nSee docs/README.md to discover the available modules and their usage level.")
         exit(status)
 
-def create_parser(description):
-    # Main parameter of the arguments parser: "encode" or "decode"
-    parser = CustomArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, exit_on_error=False, description=description)
-    parser.add_argument("-g", "--debug", action="store_true", help=f"Output debug information")
-    subparser = parser.add_subparsers(help="You must specify one of the following subcomands:", dest="subparser_name")
-    parser_encode = subparser.add_parser("encode", help="Encode an image")
-    parser_decode = subparser.add_parser("decode", help="Decode an image")
-    parser_encode.set_defaults(func=encode)
-    parser_decode.set_defaults(func=decode)
-    return parser, parser_encode, parser_decode
+description = None
+with open("/tmp/description.txt", 'r') as f:
+    description = f.readline()
+        
+#def create_parser(description):
+# Main parameter of the arguments parser: "encode" or "decode"
+parser = CustomArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, exit_on_error=False, description=description)
+parser.add_argument("-g", "--debug", action="store_true", help=f"Output debug information")
+subparser = parser.add_subparsers(help="You must specify one of the following subcomands:", dest="subparser_name")
+parser_encode = subparser.add_parser("encode", help="Encode an image")
+parser_decode = subparser.add_parser("decode", help="Decode an image")
+parser_encode.set_defaults(func=encode)
+parser_decode.set_defaults(func=decode)
+#    return parser, parser_encode, parser_decode

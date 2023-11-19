@@ -4,6 +4,8 @@ import numpy as np
 import logging
 import main
 import importlib
+with open("/tmp/description.txt", 'w') as f:
+    f.write(__doc__)
 import parser
 
 from color_transforms.YCoCg import from_RGB # pip install "color_transforms @ git+https://github.com/vicente-gonzalez-ruiz/color_transforms"
@@ -11,6 +13,8 @@ from color_transforms.YCoCg import to_RGB
 #from information_theory import distortion # pip install "information_theory @ git+https://github.com/vicente-gonzalez-ruiz/information_theory"
 
 default_quantizer = "deadzone"
+
+#_parser, parser_encode, parser_decode = parser.create_parser(description=__doc__)
 
 parser.parser_encode.add_argument("-c", "--quantizer", help=f"Quantizer (default: {default_quantizer})", default=default_quantizer)
 parser.parser_decode.add_argument("-c", "--quantizer", help=f"Quantizer (default: {default_quantizer})", default=default_quantizer)

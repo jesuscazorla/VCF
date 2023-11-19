@@ -3,6 +3,8 @@
 import numpy as np
 import logging
 import main
+with open("/tmp/description.txt", 'w') as f:
+    f.write(__doc__)
 import parser
 
 # pip install "scalar_quantization @ git+https://github.com/vicente-gonzalez-ruiz/scalar_quantization"
@@ -16,6 +18,8 @@ import importlib
   
 default_QSS = 32
 default_EIC = "PNG"
+
+#_parser, parser_encode, parser_decode = parser.create_parser(description=__doc__)
 
 parser.parser_encode.add_argument("-e", "--entropy_image_codec", help=f"Entropy Image Codec (default: {default_EIC})", default=default_EIC)
 parser.parser_decode.add_argument("-e", "--entropy_image_codec", help=f"Entropy Image Codec (default: {default_EIC})", default=default_EIC)
