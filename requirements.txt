@@ -1,5 +1,6 @@
 scikit-image
 opencv-python
+#information_theory @ git+https://github.com/vicente-gonzalez-ruiz/information_theory@main#egg=information_theory
 git+https://github.com/vicente-gonzalez-ruiz/information_theory
 av
 scikit-learn
