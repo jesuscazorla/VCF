@@ -3,7 +3,7 @@
 import io
 from skimage import io as skimage_io # pip install scikit-image
 import numpy as np
-import pywt # pip install pywavelets
+#import pywt # pip install pywavelets
 import os
 import logging
 import main

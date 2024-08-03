@@ -1,6 +1,8 @@
 scikit-image
 opencv-python
-#information_theory @ git+https://github.com/vicente-gonzalez-ruiz/information_theory@main#egg=information_theory
-git+https://github.com/vicente-gonzalez-ruiz/information_theory
 av
 scikit-learn
+pywavelets
+information_theory @ git+https://github.com/vicente-gonzalez-ruiz/information_theory@main#egg=information_theory
+DCT2D @ git+https://github.com/vicente-gonzalez-ruiz/DCT2D@master#egg=DCT2D
+color_transforms @ git+https://github.com/vicente-gonzalez-ruiz/color_transforms@main#egg=color_transforms
