@@ -1,10 +1,10 @@
-'''Image quantization using a deadzone scalar quantizer.'''
+'''Image (spatial 2D) quantization using a vector quantizer.'''
 
 import os
 import numpy as np
 import logging
 import main
-with open("/tmp/description.txt", 'w') as f:
+with open("/tmp/description.txt", 'w') as f:  # Used by parser.py
     f.write(__doc__)
 import parser
 from sklearn import cluster

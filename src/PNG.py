@@ -5,8 +5,8 @@ from skimage import io as skimage_io # pip install scikit-image
 import main
 import logging
 import numpy as np
-import cv2 as cv
-with open("/tmp/description.txt", 'w') as f:
+import cv2 as cv # pip install opencv-python
+with open("/tmp/description.txt", 'w') as f:  # Used by parser.py
     f.write(__doc__)
 import parser
 import entropy_image_coding as EIC
@@ -37,7 +37,7 @@ class CoDec(EIC.CoDec):
         super().__init__(args)
         self.file_extension = ".png"
 
-    # pip install imageio-freeimage
+    # pip install imageio-freeimage (not necessary now)
     def compress(self, img):
         #skimage_io.use_plugin('freeimage')
         #compressed_img = img

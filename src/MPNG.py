@@ -8,12 +8,12 @@ import main
 import logging
 import numpy as np
 import cv2 as cv # pip install opencv-python
-with open("/tmp/description.txt", 'w') as f:
+with open("/tmp/description.txt", 'w') as f:  # Used by parser.py
     f.write(__doc__)
 import parser
 import entropy_video_coding as EVC
 from entropy_video_coding import Video
-import av
+import av  # pip install av
 from PIL import Image
 
 # Default IOs

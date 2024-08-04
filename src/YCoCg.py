@@ -4,7 +4,7 @@ import numpy as np
 import logging
 import main
 import importlib
-with open("/tmp/description.txt", 'w') as f:
+with open("/tmp/description.txt", 'w') as f:  # Used by parser.py
     f.write(__doc__)
 import parser
 

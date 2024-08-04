@@ -7,7 +7,7 @@ import numpy as np
 import gzip
 import logging
 import main
-with open("/tmp/description.txt", 'w') as f:
+with open("/tmp/description.txt", 'w') as f:  # Used by parser.py
     f.write(__doc__)
 import parser
 
