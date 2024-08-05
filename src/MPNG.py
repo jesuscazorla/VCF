@@ -50,9 +50,10 @@ class CoDec(EVC.CoDec):
                 self.input_bytes += packet.size
             for frame in packet.decode():
                 img = frame.to_image()
-                img_counter += 1
                 #img_fn = f"{ENCODE_OUTPUT_PREFIX}_%04d.png" % frame.index
-                img_fn = f"{self.args.output}_%04d.png" % frame.index
+                #img_fn = f"{self.args.output}_%04d.png" % frame.index
+                img_fn = f"{self.args.output}_%04d.png" % img_counter
+                img_counter += 1
                 #print(img_fn)
                 img.save(img_fn)
                 if __debug__:
@@ -74,6 +75,7 @@ class CoDec(EVC.CoDec):
             img = frame.to_image()
             print(type(frame))
             img_fn = f"{ENCODE_OUTPUT_PREFIX}_%04d.png" % frame.index
+            img_counter += 1
             #print(img_fn)
             img.save(img_fn)
             if __debug__:
@@ -85,38 +87,56 @@ class CoDec(EVC.CoDec):
             else:
                 logging.info(f"{img_fn} {img.size} {img.mode}")
             # cv2.imwrite(img_fn, img)
-            img_counter += 1
         #compressed_vid = Video(img_counter, *vid.get_shape()[1:], ENCODE_OUTPUT_PREFIX)
-        self.N_frames = img_counter
+        self.N_frames = img_counter + 1
         self.width, self.height = img.size
         self.N_channels = len(img.mode)
         #return compressed_vid
 
     def decompress(self):
-        '''Input a sequence of PNG images and output a H.264 AVI-file.'''
+        '''Input a sequence of PNG images and output a H.264 AVI-file with lossless encoding.'''
         imgs = sorted(os.path.join("/tmp", file)
-            for file in os.listdir("/tmp") if file.lower().startswith("encoded".lower()) and file.lower().endswith(".png".lower()))
+            for file in os.listdir("/tmp")
+                      if file.lower().startswith("encoded".lower()) and file.lower().endswith(".png".lower()))
         
         #imgs = [i for i in os.listdir(self.args.input) if i.lower().endswith('.png')]
-        
+
+        # Open the output file container
         container = av.open(self.args.output, 'w', format='avi')
         video_stream = container.add_stream('libx264', rate=self.framerate)
-        video_stream.options = {'crf': '0', 'preset': 'veryslow'}
-        img_0 = Image.open("/tmp/encoded_0000.png").convert('RGB')
+
+        # Set lossless encoding options
+        #video_stream.options = {'crf': '0', 'preset': 'veryslow'}
+        video_stream.options = {'crf': '0', 'preset': 'ultrafast'}
+
+        # Optionally set pixel format to ensure no color space conversion happens
+        video_stream.pix_fmt = 'yuv444p'
+        #video_stream.pix_fmt = 'rgb24'
+    
+        #img_0 = Image.open("/tmp/encoded_0000.png").convert('RGB')
+        img_0 = Image.open(imgs[0]).convert('RGB')
         width, height = img_0.size
         video_stream.width = width
         video_stream.height = height
         self.width, self.height = img_0.size
         self.N_channels = len(img_0.mode)
+
         img_counter = 0
         #print(imgs)
         for i in imgs:
-            img = Image.open(i)
-            img_counter += 1
+            img = Image.open(i).convert('RGB')
             logging.info(f"Decoding frame {img_counter} into {self.args.output}")
+
+            # Convert the image to a VideoFrame
             frame = av.VideoFrame.from_image(img)
+
+            # Encode the frame and write it to the container
             packet = video_stream.encode(frame)
             container.mux(packet)
+            img_counter += 1
+
+        # Ensure all frames are written
+        container.mux(video_stream.encode())
         container.close()
         self.N_frames = img_counter
         #vid = compressed_vid

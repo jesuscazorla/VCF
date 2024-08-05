@@ -78,7 +78,9 @@ class CoDec:
                 for frame_x, frame_y in zip(container_x.decode(video=0), container_y.decode(video=0)):
                     img_x = np.array(frame_x.to_image())
                     img_y = np.array(frame_y.to_image())
-                    total_RMSE += distortion.RMSE(img_x, img_y)
+                    img_RMSE = distortion.RMSE(img_x, img_y)
+                    print(img_RMSE)
+                    total_RMSE += img_RMSE
                     print(f"{img_counter}/{self.N_frames}", end='\r', flush=True)
                     img_counter += 1
                 RMSE = total_RMSE / self.N_frames
