@@ -73,7 +73,7 @@ class CoDec(EVC.CoDec):
         img_counter = 0
         for frame in container.decode(video=0):
             img = frame.to_image()
-            print(type(frame))
+            #print(type(frame))
             img_fn = f"{ENCODE_OUTPUT_PREFIX}_%04d.png" % frame.index
             img_counter += 1
             #print(img_fn)
@@ -97,7 +97,7 @@ class CoDec(EVC.CoDec):
         '''Input a sequence of PNG images and output a H.264 AVI-file with lossless encoding.'''
         imgs = sorted(os.path.join("/tmp", file)
             for file in os.listdir("/tmp")
-                      if file.lower().startswith("encoded".lower()) and file.lower().endswith(".png".lower()))
+                if file.lower().startswith("encoded".lower()) and file.lower().endswith(".png".lower()))
         
         #imgs = [i for i in os.listdir(self.args.input) if i.lower().endswith('.png')]
 

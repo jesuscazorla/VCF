@@ -79,7 +79,7 @@ class CoDec:
                     img_x = np.array(frame_x.to_image())
                     img_y = np.array(frame_y.to_image())
                     img_RMSE = distortion.RMSE(img_x, img_y)
-                    print(img_RMSE)
+                    #print(img_RMSE)
                     total_RMSE += img_RMSE
                     print(f"{img_counter}/{self.N_frames}", end='\r', flush=True)
                     img_counter += 1
