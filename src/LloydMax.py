@@ -11,9 +11,8 @@ with open("/tmp/description.txt", 'w') as f:  # Used by parser.py
     f.write(__doc__)
 import parser
 
-# pip install "scalar_quantization @ git+https://github.com/vicente-gonzalez-ruiz/scalar_quantization"
-from scalar_quantization.LloydMax_quantization import LloydMax_Quantizer as Quantizer
-from scalar_quantization.LloydMax_quantization import name as quantizer_name
+from scalar_quantization.LloydMax_quantization import LloydMax_Quantizer as Quantizer # pip install "scalar_quantization @ git+https://github.com/vicente-gonzalez-ruiz/scalar_quantization"
+from scalar_quantization.LloydMax_quantization import name as quantizer_name # pip install "scalar_quantization @ git+https://github.com/vicente-gonzalez-ruiz/scalar_quantization"
 
 #from quantization import EC
 
@@ -36,11 +35,13 @@ class CoDec(EC.CoDec):
     def __init__(self, args): # ??
         super().__init__(args)
 
+    '''
     def _compress(self, img):
         k = self.quantize(img)
         #k = k.astype(np.uint8)
         compressed_k = super().compress(k)
         return compressed_k
+    '''
 
     def encode(self):
         img = self.encode_read()
@@ -59,11 +60,13 @@ class CoDec(EC.CoDec):
         #rate = (self.input_bytes*8)/(k.shape[0]*k.shape[1])
         #return rate
 
+    '''
     def _decompress(self, compressed_k):
         k = super().decompress(compressed_k)
         #k = k.astype(np.uint8)
         y = self.dequantize(k)
         return y
+    '''
 
     def quantize(self, img):
         '''Quantize the image.'''

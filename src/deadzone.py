@@ -7,9 +7,8 @@ with open("/tmp/description.txt", 'w') as f:
     f.write(__doc__)
 import parser
 
-# pip install "scalar_quantization @ git+https://github.com/vicente-gonzalez-ruiz/scalar_quantization"
-from scalar_quantization.deadzone_quantization import Deadzone_Quantizer as Quantizer
-from scalar_quantization.deadzone_quantization import name as quantizer_name
+from scalar_quantization.deadzone_quantization import Deadzone_Quantizer as Quantizer # pip install "scalar_quantization @ git+https://github.com/vicente-gonzalez-ruiz/scalar_quantization"
+from scalar_quantization.deadzone_quantization import name as quantizer_name # pip install "scalar_quantization @ git+https://github.com/vicente-gonzalez-ruiz/scalar_quantization"
 
 from information_theory import distortion # pip install "information_theory @ git+https://github.com/vicente-gonzalez-ruiz/information_theory"
 
@@ -48,6 +47,7 @@ class CoDec(EC.CoDec):
         self.Q = Quantizer(Q_step=self.QSS, min_val=min_index_val, max_val=max_index_val)
         self.output_bytes = 1 # We suppose that the representation of QSS requires 1 byte.
 
+    '''    
     def _compress(self, img):
         k = self.quantize(img)
         if np.max(k) > 255:
@@ -57,6 +57,7 @@ class CoDec(EC.CoDec):
         k = k.astype(np.uint8)
         compressed_k = super().compress(k)
         return compressed_k
+    '''
 
     def encode(self):
         '''Read an image, quantize the image, and save it.'''
@@ -73,11 +74,13 @@ class CoDec(EC.CoDec):
         #rate = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
         #return rate
 
+    '''
     def _decompress(self, compressed_k):
         k = super().decompress(compressed_k)
         #k = k.astype(np.uint8)
         y = self.dequantize(k)
         return y
+    '''
     
     def decode(self):
         '''Read a quantized image, "dequantize", and save.'''

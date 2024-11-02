@@ -2,7 +2,7 @@
 
 import argparse
 import numpy as np
-import cv2 as cv
+import cv2 as cv # pip install opencv-python
 from collections import Counter
 
 print("Huffman coding")

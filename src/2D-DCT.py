@@ -21,6 +21,8 @@ from DCT2D.block_DCT import get_blocks
 from color_transforms.YCoCg import from_RGB # pip install "color_transforms @ git+https://github.com/vicente-gonzalez-ruiz/color_transforms"
 from color_transforms.YCoCg import to_RGB
 
+from information_theory import distortion # pip install "information_theory @ git+https://github.com/vicente-gonzalez-ruiz/information_theory"
+
 default_block_size = 8
 default_CT = "YCoCg"
 perceptual_quantization = False
@@ -46,6 +48,7 @@ class CoDec(CT.CoDec):
         self.block_size = args.block_size_DCT
         logging.info(f"block_size = {self.block_size}")
         if args.perceptual_quantization:
+            # See http://www.jatit.org/volumes/Vol70No3/24Vol70No3.pdf
             if self.block_size == 8:
                 self.quantize_decom = self.perceptual_quantize_decom
                 logging.info("using perceptual quantization")

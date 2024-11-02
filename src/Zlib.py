@@ -37,9 +37,10 @@ class CoDec (EIC.CoDec):
     def decompress(self, compressed_img):
         compressed_img = io.BytesIO(compressed_img)
         img = np.load(compressed_img)['a']
+        #print(type(img), img.shape, img.dtype)
         return img
 
-    def _encode_write_fn(self, compressed_img, fn):
+    def ____encode_write_fn(self, compressed_img, fn):
         '''Write to disk the image <compressed_img> with filename <fn>.'''
         compressed_img.seek(0)
         with open(fn, "wb") as output_file:
@@ -47,7 +48,7 @@ class CoDec (EIC.CoDec):
         self.output_bytes += os.path.getsize(fn)
         logging.info(f"Written {os.path.getsize(fn)} bytes in {fn}")
 
-    def _encode(self):
+    def ____encode(self):
         '''Read an image, compress it with Zlib, and save it in the disk.
         '''
         img = self.encode_read()
@@ -66,7 +67,7 @@ class CoDec (EIC.CoDec):
         rate = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
         return rate
 
-    def _decode(self):
+    def ____decode(self):
         '''Read a compressed image, decompress it, and save it.'''
         compressed_img = self.decode_read()
         compressed_img_diskimage = io.BytesIO(compressed_img)
