@@ -14,6 +14,7 @@ import gzip
 import pickle
 from bitarray import bitarray
 import os
+import math
 
 # Default IO images
 ENCODE_INPUT = "http://www.hpca.ual.es/~vruiz/images/lena.png"
@@ -68,14 +69,14 @@ def generate_huffman_codes(node, current_code="", codes={}):
 def encode_data(data, codes):
     # Create a single concatenated string of all encoded bits
     encoded_string = ''.join(codes[value] for value in data)
-    
+    #print("-------------_", len(data))
     # Convert this string of bits to a bitarray
     encoded_data = bitarray(encoded_string)
 
     return encoded_data
 
 def decode_data(encoded_data, root):
-    decoded_data = []
+    data = []
     node = root
     for bit in encoded_data:
         if bit == 0:
@@ -84,9 +85,10 @@ def decode_data(encoded_data, root):
             node = node.right
         # If it's a leaf node, record the value and reset to root
         if node.left is None and node.right is None:
-            decoded_data.append(node.value)
+            data.append(node.value)
             node = root
-    return decoded_data
+    #print("-------------_", len(data))
+    return data
 
 class CoDec (EIC.CoDec):
 
@@ -101,7 +103,7 @@ class CoDec (EIC.CoDec):
         # Flatten the array and convert to a list
         flattened_img = img.flatten().tolist()
 
-        # Build Huffman Tree and generate codes
+        # Build Huffman Tree and generate the Huffman codes
         root = build_huffman_tree(flattened_img)
         codes = generate_huffman_codes(root)
 
@@ -117,7 +119,7 @@ class CoDec (EIC.CoDec):
             pickle.dump(root, f)  # `gzip.open` compresses the pickle data
 
         tree_length = os.path.getsize(tree_fn)
-        logging.info(f"Length of the Huffman tree + image shape = {tree_length} bytes")
+        logging.info(f"Length of the file \"{tree_fn}\" (Huffman tree + image shape) = {tree_length} bytes")
         self.output_bytes += tree_length
 
         return compressed_img
@@ -137,10 +139,10 @@ class CoDec (EIC.CoDec):
     
         # Decode the image
         decoded_data = decode_data(encoded_data, root)
+        decoded_data = decoded_data[:math.prod(shape) - len(decoded_data)] # Sometimes, when the alphabet size is small, some extra symbols are decoded :-/
 
         # Reshape decoded data to original shape
         img = np.array(decoded_data).reshape(shape).astype(np.uint8)
-        print(type(img), img.shape, img.dtype)
         return img
 
 if __name__ == "__main__":
