@@ -1,4 +1,4 @@
-'''Entropy Encoding of images Huffman Coding'''
+'''Entropy Encoding of images non-adaptive Huffman Coding'''
 
 import io
 import numpy as np
