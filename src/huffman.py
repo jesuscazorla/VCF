@@ -1,118 +1,152 @@
-'''Huffman Coding (unfinished)'''
+'''Entropy Encoding of images Huffman Coding'''
 
-import argparse
+import io
 import numpy as np
-import cv2 as cv # pip install opencv-python
-from collections import Counter
-
-print("Huffman coding")
-
-def int_or_str(text):
-    '''Helper function for argument parsing.'''
-    try:
-        return int(text)
-    except ValueError:
-        return text
-
-# A way of converting a call to a object's method to a plain function
-def encode(codec):
-    return codec.encode()
-
-def decode(codec):
-    return codec.decode()
+import main
+import logging
+with open("/tmp/description.txt", 'w') as f:  # Used by parser.py
+    f.write(__doc__)
+import parser
+import entropy_image_coding as EIC
+import heapq
+from collections import defaultdict, Counter
+import gzip
+import pickle
+from bitarray import bitarray
+import os
 
 # Default IO images
 ENCODE_INPUT = "http://www.hpca.ual.es/~vruiz/images/lena.png"
-ENCODE_OUTPUT = "/tmp/encoded.png"
+ENCODE_OUTPUT = "/tmp/encoded" # The file extension is decided in run-time
 DECODE_INPUT = ENCODE_OUTPUT
 DECODE_OUTPUT = "/tmp/decoded.png"
 
-# Main parameter of the arguments parser: "encode" or "decode"
-parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("-g", "--debug", action="store_true", help=f"Output debug information")
-subparsers = parser.add_subparsers(help="You must specify one of the following subcomands:", dest="subparser_name")
-
 # Encoder parser
-parser_encode = subparsers.add_parser("encode", help="Encode an image")
-parser_encode.add_argument("-i", "--input", type=int_or_str, help=f"Input image (default: {ENCODE_INPUT})", default=ENCODE_INPUT)
-parser_encode.add_argument("-o", "--output", type=int_or_str, help=f"Output image (default: {ENCODE_OUTPUT})", default=f"{ENCODE_OUTPUT}")
-parser_encode.set_defaults(func=encode)
+parser.parser_encode.add_argument("-i", "--input", type=parser.int_or_str, help=f"Input image (default: {ENCODE_INPUT})", default=ENCODE_INPUT)
+parser.parser_encode.add_argument("-o", "--output", type=parser.int_or_str, help=f"Output image (default: {ENCODE_OUTPUT})", default=f"{ENCODE_OUTPUT}")
 
 # Decoder parser
-parser_decode = subparsers.add_parser("decode", help='Decode an image')
-parser_decode.add_argument("-i", "--input", type=int_or_str, help=f"Input image (default: {DECODE_INPUT})", default=f"{DECODE_INPUT}")
-parser_decode.add_argument("-o", "--output", type=int_or_str, help=f"Output image (default: {DECODE_OUTPUT})", default=f"{DECODE_OUTPUT}")    
-parser_decode.set_defaults(func=decode)
+parser.parser_decode.add_argument("-i", "--input", type=parser.int_or_str, help=f"Input image (default: {DECODE_INPUT})", default=f"{DECODE_INPUT}")
+parser.parser_decode.add_argument("-o", "--output", type=parser.int_or_str, help=f"Output image (default: {DECODE_OUTPUT})", default=f"{DECODE_OUTPUT}")    
 
-class NodeTree(object):
-    def __init__(self, left=None, right=None):
-        self.left = left
-        self.right = right
+parser.parser.parse_known_args()
 
-    def children(self):
-        return (self.left, self.right)
-
-    def __str__(self):
-        return self.left, self.right
-
-
-def huffman_code_tree(node, binString=''):
-    if type(node) is np.uint8:
-        return {node: binString}
-    (l, r) = node.children()
-    d = dict()
-    d.update(huffman_code_tree(l, binString + '0'))
-    d.update(huffman_code_tree(r, binString + '1'))
-
-    return d
-
-def make_tree(nodes):
-    while len(nodes) > 1:
-        (key1, c1) = nodes[-1]
-        (key2, c2) = nodes[-2]
-        nodes = nodes[:-2]
-        node = NodeTree(key1, key2)
-        nodes.append((node, c1 + c2))
-
-        nodes = sorted(nodes, key=lambda x: x[1], reverse=True)
-
-    return nodes[0][0]
-
-def huffman_decode(encoding, huffman_tree):
-    tree_head = huffman_tree
-    decoded = []
-    for i in encoding:
-        if i == 1:
-            huffman_tree = huffman_tree.right
-            print("right")
-        elif i == 0:
-            huffman_tree = huffman_tree.left
-        
-        try:
-            if huffman_tree.left == None and huffman_tree.right == None:
-                pass
-        except AttributeError:
-            print("AttributeError")
-            print(huffman_tree)
-            decoded.append(huffman_tree)
-            huffman_tree = tree_head
-    print(decoded)
-    string = ''.join([str(item) for item in decoded])
-    return string
-
-if __name__ == '__main__':
-    fn = "/tmp/encoded.png"
-    #Read image
-    img = cv.imread(fn, cv.IMREAD_UNCHANGED)
-    freq = dict(Counter(img.flatten()))
-    freq = sorted(freq.items(), key=lambda x: x[1], reverse=True)
-    node = make_tree(freq)
+class HuffmanNode:
+    def __init__(self, value, freq):
+        self.value = value
+        self.freq = freq
+        self.left = None
+        self.right = None
     
-    encoding = huffman_code_tree(node)
-    for i in encoding:
-        print(f'{i}: {encoding[i]}')
+    def __lt__(self, other):
+        return self.freq < other.freq
 
-    decodedHuffman = huffman_decode(encoding, node)
-    print("Decoded Huffman")
-    print(decodedHuffman)
-    cv.imwrite("/tmp/huffman.png", np.array(list(encoding.keys()), dtype=np.uint8), [cv.IMWRITE_PNG_COMPRESSION, 0])
+def build_huffman_tree(data):
+    frequency = Counter(data)
+    heap = [HuffmanNode(value, freq) for value, freq in frequency.items()]
+    heapq.heapify(heap)
+    
+    while len(heap) > 1:
+        left = heapq.heappop(heap)
+        right = heapq.heappop(heap)
+        merged = HuffmanNode(None, left.freq + right.freq)
+        merged.left = left
+        merged.right = right
+        heapq.heappush(heap, merged)
+    
+    return heap[0]
+
+def generate_huffman_codes(node, current_code="", codes={}):
+    if node is None:
+        return
+    if node.value is not None:
+        codes[node.value] = current_code
+    generate_huffman_codes(node.left, current_code + "0", codes)
+    generate_huffman_codes(node.right, current_code + "1", codes)
+    return codes
+
+def encode_data(data, codes):
+    # Create a single concatenated string of all encoded bits
+    encoded_string = ''.join(codes[value] for value in data)
+    
+    # Convert this string of bits to a bitarray
+    encoded_data = bitarray(encoded_string)
+
+    return encoded_data
+
+def decode_data(encoded_data, root):
+    decoded_data = []
+    node = root
+    for bit in encoded_data:
+        if bit == 0:
+            node = node.left
+        else:
+            node = node.right
+        # If it's a leaf node, record the value and reset to root
+        if node.left is None and node.right is None:
+            decoded_data.append(node.value)
+            node = root
+    return decoded_data
+
+class CoDec (EIC.CoDec):
+
+    def __init__(self, args):
+        super().__init__(args)
+        self.file_extension = ".huf"
+
+    def compress(self, img):
+        tree_fn = f"{self.args.output}_huffman_tree.pkl.gz"
+        compressed_img = io.BytesIO()
+
+        # Flatten the array and convert to a list
+        flattened_img = img.flatten().tolist()
+
+        # Build Huffman Tree and generate codes
+        root = build_huffman_tree(flattened_img)
+        codes = generate_huffman_codes(root)
+
+        # Encode the flattened array
+        encoded_img = encode_data(flattened_img, codes)
+
+        # Write encoded image and original shape to compressed_img
+        compressed_img.write(encoded_img.tobytes())  # Save encoded data as bytes
+
+        # Compress and save shape and the Huffman Tree
+        with gzip.open(tree_fn, 'wb') as f:
+            np.save(f, img.shape)
+            pickle.dump(root, f)  # `gzip.open` compresses the pickle data
+
+        tree_length = os.path.getsize(tree_fn)
+        logging.info(f"Length of the Huffman tree + image shape = {tree_length} bytes")
+        self.output_bytes += tree_length
+
+        return compressed_img
+    
+    def decompress(self, compressed_img):
+        tree_fn = f"{self.args.input}_huffman_tree.pkl.gz"
+        compressed_img = io.BytesIO(compressed_img)
+        
+        # Load the shape and the Huffman Tree from the compressed file
+        with gzip.open(tree_fn, 'rb') as f:
+            shape = np.load(f)
+            root = pickle.load(f)
+    
+        # Read encoded image data as binary
+        encoded_data = bitarray()
+        encoded_data.frombytes(compressed_img.read())
+    
+        # Decode the image
+        decoded_data = decode_data(encoded_data, root)
+
+        # Reshape decoded data to original shape
+        img = np.array(decoded_data).reshape(shape).astype(np.uint8)
+        print(type(img), img.shape, img.dtype)
+        return img
+
+if __name__ == "__main__":
+    main.main(parser.parser, logging, CoDec)
+
+
+
+
+
