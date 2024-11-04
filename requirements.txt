@@ -1,3 +1,4 @@
+numpy
 scikit-image
 opencv-python
 av
@@ -7,4 +8,5 @@ netpbmfile[all]
 information_theory @ git+https://github.com/vicente-gonzalez-ruiz/information_theory@main#egg=information_theory
 DCT2D @ git+https://github.com/vicente-gonzalez-ruiz/DCT2D@master#egg=DCT2D
 color_transforms @ git+https://github.com/vicente-gonzalez-ruiz/color_transforms@main#egg=color_transforms
-DWT2D @ git+https://github.com/vicente-gonzalez-ruiz/DWT2D@master#egg=DWT2D
+scalar_quantization @ git+https://github.com/vicente-gonzalez-ruiz/scalar_quantization
+jupyterlab

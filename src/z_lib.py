@@ -1,4 +1,4 @@
-'''Entropy Encoding of images using Zlib.'''
+'''Entropy Encoding of images using zlib.'''
 
 import io
 import numpy as np
@@ -49,7 +49,7 @@ class CoDec (EIC.CoDec):
         logging.info(f"Written {os.path.getsize(fn)} bytes in {fn}")
 
     def ____encode(self):
-        '''Read an image, compress it with Zlib, and save it in the disk.
+        '''Read an image, compress it with zlib, and save it in the disk.
         '''
         img = self.encode_read()
         compressed_img = self.compress(img)

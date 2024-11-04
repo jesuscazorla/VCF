@@ -10,7 +10,7 @@ from PIL import Image # pip install
 import numpy as np
 import logging
 import subprocess
-import cv2 as cv
+import cv2 as cv # pip install opencv-python
 import main
 import urllib
 
