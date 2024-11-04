@@ -124,7 +124,10 @@ class CoDec:
         logging.info(f"Written {os.path.getsize(fn)} bytes in {fn}")
 
     def decode_write_fn(self, img, fn):
-        skimage_io.imsave(fn, img)
+        try:
+            skimage_io.imsave(fn, img)
+        except Exception as e:
+            logging.error(f"Exception \"{e}\" saving image {fn} with shape {img.shape} and type {img.dtype}")
         self.output_bytes += os.path.getsize(fn)
         logging.info(f"Written {os.path.getsize(fn)} bytes in {fn} with shape {img.shape} and type {img.dtype}")
 

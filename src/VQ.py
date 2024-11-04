@@ -7,12 +7,12 @@ import main
 with open("/tmp/description.txt", 'w') as f:  # Used by parser.py
     f.write(__doc__)
 import parser
-from sklearn import cluster
+from sklearn import cluster  # pip install scikit-learn
 
 import entropy_image_coding as EIC
 import importlib
 
-from information_theory import information # pip install "information_theory @ git+https://github.com/vicente-gonzalez-ruiz/information_theory"
+from information_theory import information  # pip install "information_theory @ git+https://github.com/vicente-gonzalez-ruiz/information_theory"
   
 default_block_size = 4
 default_EIC = "PNG"
@@ -117,7 +117,7 @@ class CoDec(EC.CoDec):
         img_shape = (labels.shape[0]*self.BS, labels.shape[1]*self.BS, centroids.shape[2])
         _y = np.empty(shape=(labels.shape[0]*self.BS,
                              labels.shape[1]*self.BS,
-                             centroids.shape[2]), dtype=np.int16)
+                             centroids.shape[2]), dtype=np.uint8)
         for y in range(0, img_shape[0], self.BS):
             for x in range(0, img_shape[1], self.BS):
                 #print("---", labels)
