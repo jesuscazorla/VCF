@@ -30,7 +30,7 @@ parser.parser_encode.add_argument("-o", "--output", type=parser.int_or_str, help
 parser.parser_decode.add_argument("-i", "--input", type=parser.int_or_str, help=f"Prefix of the input sequence of frames (default: {DECODE_INPUT_PREFIX})", default=f"{DECODE_INPUT_PREFIX}")
 parser.parser_decode.add_argument("-o", "--output", type=parser.int_or_str, help=f"Output video (default: {DECODE_OUTPUT})", default=f"{DECODE_OUTPUT}")    
 
-parser.parser.parse_known_args()
+#parser.parser.parse_known_args()
 
 #COMPRESSION_LEVEL = 9
 

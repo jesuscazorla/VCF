@@ -27,7 +27,7 @@ parser.parser_decode.add_argument("-e", "--entropy_image_codec", help=f"Entropy 
 parser.parser_encode.add_argument("-q", "--QSS", type=parser.int_or_str, help=f"Quantization step size (default: {default_QSS})", default=default_QSS)
 parser.parser_decode.add_argument("-q", "--QSS", type=parser.int_or_str, help=f"Quantization step size (default: {default_QSS})", default=default_QSS)
 
-args = parser.parser.parse_args()
+args = parser.parser.parse_known_args()[0]
 EC = importlib.import_module(args.entropy_image_codec)
 
 class CoDec(EC.CoDec):

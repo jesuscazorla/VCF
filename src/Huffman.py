@@ -30,7 +30,7 @@ parser.parser_encode.add_argument("-o", "--output", type=parser.int_or_str, help
 parser.parser_decode.add_argument("-i", "--input", type=parser.int_or_str, help=f"Input image (default: {DECODE_INPUT})", default=f"{DECODE_INPUT}")
 parser.parser_decode.add_argument("-o", "--output", type=parser.int_or_str, help=f"Output image (default: {DECODE_OUTPUT})", default=f"{DECODE_OUTPUT}")    
 
-parser.parser.parse_known_args()
+#parser.parser.parse_known_args()
 
 class HuffmanNode:
     def __init__(self, value, freq):
