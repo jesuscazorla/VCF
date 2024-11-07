@@ -1,4 +1,4 @@
-'''Exploiting spatial redundancy with the 2D Discrete Cosine Transform.'''
+'''Exploiting spatial redundancy with the 2D Discrete Cosine Transform of constant block size.'''
 
 import io
 from skimage import io as skimage_io # pip install scikit-image
