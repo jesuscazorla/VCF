@@ -139,7 +139,8 @@ class CoDec (EIC.CoDec):
     
         # Decode the image
         decoded_data = decode_data(encoded_data, root)
-        decoded_data = decoded_data[:math.prod(shape) - len(decoded_data)] # Sometimes, when the alphabet size is small, some extra symbols are decoded :-/
+        if math.prod(shape) < len(decoded_data):
+            decoded_data = decoded_data[:math.prod(shape) - len(decoded_data)] # Sometimes, when the alphabet size is small, some extra symbols are decoded :-/
 
         # Reshape decoded data to original shape
         img = np.array(decoded_data).reshape(shape).astype(np.uint8)
