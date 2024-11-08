@@ -1,4 +1,4 @@
-'''Motion PNG. Inputs a .AVI file and outputs a sequence of frames \
+'''Motion PNG. Inputs an AVI/OGV/MP4/MKV file and outputs a sequence of frames \
 encoded in PNG (Portable Network Graphics), and viceversa.'''
 
 import io
@@ -110,8 +110,8 @@ class CoDec(EVC.CoDec):
         video_stream.options = {'crf': '0', 'preset': 'ultrafast'}
 
         # Optionally set pixel format to ensure no color space conversion happens
-        video_stream.pix_fmt = 'yuv444p'
-        #video_stream.pix_fmt = 'rgb24'
+        video_stream.pix_fmt = 'yuv444p'  # Working but lossy because the YCrCb is floating point-based
+        #video_stream.pix_fmt = 'rgb24'  # Not work
     
         #img_0 = Image.open("/tmp/encoded_0000.png").convert('RGB')
         img_0 = Image.open(imgs[0]).convert('RGB')

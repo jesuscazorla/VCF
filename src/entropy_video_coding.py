@@ -84,7 +84,7 @@ class CoDec:
                     print(f"{img_counter}/{self.N_frames}", end='\r', flush=True)
                     img_counter += 1
                 RMSE = total_RMSE / self.N_frames
-                logging.info(f"RMSE = {RMSE}")
+                logging.info(f"\nRMSE = {RMSE}")
 
                 J = BPP + RMSE
                 logging.info(f"J = R + D = {J}")
