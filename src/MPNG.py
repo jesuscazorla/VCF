@@ -1,4 +1,4 @@
-'''Motion PNG. Inputs a .AVI file and outputs a sequence of frames
+'''Motion PNG. Inputs a .AVI file and outputs a sequence of frames \
 encoded in PNG (Portable Network Graphics), and viceversa.'''
 
 import io
@@ -17,10 +17,10 @@ import av  # pip install av
 from PIL import Image
 
 # Default IOs
-ENCODE_INPUT = "http://www.hpca.ual.es/~vruiz/videos/mobile_352x288x30x420x300.avi"
+ENCODE_INPUT = "http://www.hpca.ual.es/~vruiz/videos/mobile_352x288x30x420x300.mp4"
 ENCODE_OUTPUT_PREFIX = "/tmp/encoded"
 DECODE_INPUT_PREFIX = ENCODE_OUTPUT_PREFIX
-DECODE_OUTPUT = "/tmp/decoded.avi"
+DECODE_OUTPUT = "/tmp/decoded.mp4"
 
 # Encoder parser
 parser.parser_encode.add_argument("-i", "--input", type=parser.int_or_str, help=f"Input video (default: {ENCODE_INPUT})", default=ENCODE_INPUT)
