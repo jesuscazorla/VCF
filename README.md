@@ -5,29 +5,29 @@ A programming environment to develop and test image and video compression algori
 
 Supposing a Python interpreter and Git available:
 
-   python -m venv ~/envs/VCF  # Only if you want a new environment
-   git clone git@github.com:Sistemas-Multimedia/VCF.git
-   cd VCF
-   source ~/envs/VCF/bin/activate
-   pip install -r requirements
+      python -m venv ~/envs/VCF  # Only if you want a new environment
+      git clone git@github.com:Sistemas-Multimedia/VCF.git
+      cd VCF
+      source ~/envs/VCF/bin/activate
+      pip install -r requirements
 
 ## Usage
 
 ### Image coding (example)
 
-   cd src
-   python PNG.py encode
-   display /tmp/encoded.png
-   python PNG.py decode
-   display /tmp/decoded.png
+      cd src
+      python PNG.py encode
+      display /tmp/encoded.png
+      python PNG.py decode
+      display /tmp/decoded.png
 
 ### Video coding (example)
 
-   cd src
-   python MPNG.py encode
-   ffplay /tmp/encoded_%04d.png
-   python MPNG.py decode
-   mplayer /tmp/decoded.avi
+      cd src
+      python MPNG.py encode
+      ffplay /tmp/encoded_%04d.png
+      python MPNG.py decode
+      mplayer /tmp/decoded.avi
    
 ## Programming
 
