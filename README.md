@@ -31,7 +31,7 @@ Supposing a Python interpreter and Git available:
    
 ## Programming
 
-Typically, you need to develop a new encoding scheme for image or
+Typically, you will need to develop a new encoding scheme for image or
 video.
 
 ### Image Coding
