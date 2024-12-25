@@ -11,6 +11,7 @@ with open("/tmp/description.txt", 'w') as f:
     f.write(__doc__)
 import parser
 import importlib
+import struct
 
 #from DWT import color_dyadic_DWT as DWT
 from DCT2D.block_DCT import analyze_image as space_analyze # pip install "DCT2D @ git+https://github.com/vicente-gonzalez-ruiz/DCT2D"
@@ -86,13 +87,175 @@ class CoDec(CT.CoDec):
         else:
             self.offset = 0
 
+    def oild__pad_and_center_to_multiple_of_block_size(self, array):
+        """Pads a 2D NumPy array to the next multiple of a given
+        block size in both dimensions, centering the input array in
+        the padded array.
+
+        Parameters:
+        
+        * array (numpy.ndarray): The input 2D array.
+        
+        * self.block_size (int): The block size (must be a power of 2).
+
+        Returns:
+        
+        * numpy.ndarray: The padded 2D array with dimensions as
+        multiples of the block size.
+
+        """
+        
+        # Ensure the block size is a power of 2
+        if self.block_size & (self.block_size - 1) != 0:
+            raise ValueError("Block size must be a power of 2")
+
+        height, width = array.shape
+
+        # Calculate the target dimensions (next multiples of the block size)
+        target_height = (height + self.block_size - 1) // self.block_size * self.block_size
+        target_width = (width + self.block_size - 1) // self.block_size * self.block_size
+
+        # Calculate padding amounts
+        pad_height = target_height - height
+        pad_width = target_width - width
+
+        # Distribute the padding equally on both sides (add extra to bottom/right if odd)
+        pad_top = pad_height // 2
+        pad_bottom = pad_height - pad_top
+        pad_left = pad_width // 2
+        pad_right = pad_width - pad_left
+
+        # Pad the array with zeros
+        padded_array = np.pad(
+            array, 
+            ((pad_top, pad_bottom), (pad_left, pad_right)), 
+            mode='constant', 
+            constant_values=0
+        )
+
+        return padded_array
+
+    def old__remove_padding(self, padded_array):
+        """
+        Removes the padding from a padded 2D array, returning the original centered array.
+
+        Parameters:
+        
+        * padded_array (numpy.ndarray): The padded 2D array.
+
+        Returns:
+
+        * numpy.ndarray: The original array with padding removed.
+        """
+        original_height, original_width = self.original_shape
+        padded_height, padded_width = padded_array.shape
+
+        # Calculate the padding amounts
+        pad_height = padded_height - original_height
+        pad_width = padded_width - original_width
+
+        # Calculate the slices to extract the original array
+        pad_top = pad_height // 2
+        pad_left = pad_width // 2
+
+        unpadded_array = padded_array[pad_top:pad_top + original_height, pad_left:pad_left + original_width]
+
+        return unpadded_array
+
+    def pad_and_center_to_multiple_of_block_size(self, img):
+        """
+        Pads a 3D NumPy array (RGB image) to the next multiple of a given
+        block size in both dimensions, centering the input image in the padded image.
+
+        Parameters:
+            img (numpy.ndarray): The input 3D image (height x width x channels).
+
+        Returns:
+            numpy.ndarray: The padded 3D image with dimensions as multiples of the block size.
+        """
+        if img.ndim != 3:
+            raise ValueError("Input image must be a 3D array (height, width, channels).")
+
+        # Save original shape for later use in removing padding
+        self.original_shape = img.shape
+
+        height, width, channels = img.shape
+
+        # Calculate the target dimensions (next multiples of the block size)
+        target_height = (height + self.block_size - 1) // self.block_size * self.block_size
+        target_width = (width + self.block_size - 1) // self.block_size * self.block_size
+
+        # Calculate padding amounts
+        pad_height = target_height - height
+        pad_width = target_width - width
+
+        # Distribute the padding equally on both sides (add extra to bottom/right if odd)
+        pad_top = pad_height // 2
+        pad_bottom = pad_height - pad_top
+        pad_left = pad_width // 2
+        pad_right = pad_width - pad_left
+
+        # Pad the image with zeros (constant value of 0 for RGB)
+        padded_img = np.pad(
+            img,
+            ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)),  # No padding for channels
+            mode='constant',
+            constant_values=0
+        )
+
+        return padded_img
+
+    def remove_padding(self, padded_img):
+        """
+        Removes the padding from a padded 3D image, returning the original centered image.
+
+        Parameters:
+            padded_img (numpy.ndarray): The padded 3D image (height x width x channels).
+
+        Returns:
+            numpy.ndarray: The original 3D image with padding removed.
+        """
+        if padded_img.ndim != 3:
+            raise ValueError("Padded image must be a 3D array (height, width, channels).")
+
+        if self.original_shape is None:
+            raise ValueError("Original shape is not set. Pad the image first.")
+
+        original_height, original_width, _  = self.original_shape
+        padded_height, padded_width, _ = padded_img.shape
+
+        # Calculate the padding amounts
+        pad_height = padded_height - original_height
+        pad_width = padded_width - original_width
+
+        # Calculate the slices to extract the original image
+        pad_top = pad_height // 2
+        pad_left = pad_width // 2
+
+        # Slice to remove padding and recover the original image
+        unpadded_img = padded_img[
+            pad_top:pad_top + original_height,
+            pad_left:pad_left + original_width,
+            :
+        ]
+
+        return unpadded_img
+
     def encode(self):
         img = self.encode_read().astype(np.float32)
+        self.original_shape = img.shape
+        padded_img = self.pad_and_center_to_multiple_of_block_size(img)
+        print("--->", self.original_shape, padded_img.shape)
+        if padded_img.shape != img.shape:
+            logging.info(f"Padding image from dimensions {img.shape} to new dimensions: {padded_img.shape}")
+        with open(self.args.output + ".shape", "wb") as file:
+            file.write(struct.pack("iii", *self.original_shape))
+        img = padded_img
         img -= self.offset
+        CT_img = from_RGB(img)
         subband_y_size = int(img.shape[0]/self.block_size)
         subband_x_size = int(img.shape[1]/self.block_size)
         logging.info(f"subbband_y_size={subband_y_size}, subband_x_size={subband_x_size}")
-        CT_img = from_RGB(img)
         DCT_img = space_analyze(CT_img, self.block_size, self.block_size)
         decom_img = get_subbands(DCT_img, self.block_size, self.block_size)
         print(decom_img, decom_img.shape)
@@ -115,7 +278,10 @@ class CoDec(CT.CoDec):
 
     def decode(self):
         decom_k = self.decode_read()
+        with open(self.args.input + ".shape", "rb") as file:
+            self.original_shape = struct.unpack("iii", file.read(12))
         decom_k = self.decompress(decom_k)
+        logging.info(f"original_shape={self.original_shape}, current_shape={decom_k.shape}")
         decom_k = decom_k.astype(np.int16)
         #print("----------_", decom_k, decom_k.shape)
         #subband_y_size = int(decom_k.shape[0]/self.block_size)
@@ -126,6 +292,7 @@ class CoDec(CT.CoDec):
         print(decom_y, decom_y.shape)
         DCT_y = get_blocks(decom_y, self.block_size, self.block_size)
         CT_y = space_synthesize(DCT_y, self.block_size, self.block_size)
+        CT_y = self.remove_padding(CT_y)
         y = to_RGB(CT_y)
         y += self.offset
         if np.max(y) > 255:
