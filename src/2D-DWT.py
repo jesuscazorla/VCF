@@ -169,7 +169,11 @@ class CoDec(CT.CoDec):
         fn_without_extension = self.args.output.split('.')[0]
         fn_subband = f"{fn_without_extension}_LL_{self.levels}"
         #LL = io.BytesIO(LL)
-        LL = self.compress(LL.astype(np.uint8))
+        print(np.max(LL), np.min(LL))
+        #LL = self.compress(LL.astype(np.uint8))
+        LL += 128
+        LL = self.compress(LL.astype(np.uint16))
+        #LL = self.compress(LL.astype(np.int16))
         self.encode_write_fn(LL, fn_subband)
         resolution_index = self.levels
         #aux_decom = [decom[0][..., 0]] # Used for computing slices
@@ -181,6 +185,8 @@ class CoDec(CT.CoDec):
                 fn_subband = f"{fn_without_extension}_{subband_name}_{resolution_index}"
                 #SP = io.BytesIO(spatial_resolution[subband_index])
                 SP = self.compress(spatial_resolution[subband_index].astype(np.uint8))
+                #SP = self.compress(spatial_resolution[subband_index].astype(np.uint16))
+                #SP = self.compress(spatial_resolution[subband_index].astype(np.int16))
                 self.encode_write_fn(SP, fn_subband)
                 #aux_resol.append(spatial_resolution[subband_index][..., 0])
                 subband_index += 1
@@ -194,6 +200,8 @@ class CoDec(CT.CoDec):
         fn_subband = f"{fn_without_extension}_LL_{self.levels}"
         LL = self.decode_read_fn(fn_subband)
         LL = self.decompress(LL).astype(np.int16)
+        LL -= 128
+        #LL = self.decompress(LL).astype(np.uint16)
         decom = [LL]
         resolution_index = self.levels
         for l in range(self.levels, 0, -1):
@@ -203,6 +211,7 @@ class CoDec(CT.CoDec):
                 fn_subband = f"{fn_without_extension}_{subband_name}_{resolution_index}"
                 subband = self.decode_read_fn(fn_subband)
                 subband = self.decompress(subband).astype(np.int16)
+                #subband = self.decompress(subband).astype(np.uint16)
                 spatial_resolution.append(subband)
             decom.append(tuple(spatial_resolution))
             resolution_index -= 1
