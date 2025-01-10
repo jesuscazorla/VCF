@@ -31,6 +31,8 @@ parser.parser_decode.add_argument("-o", "--output", type=parser.int_or_str, help
 
 COMPRESSION_LEVEL = 9
 
+import png
+
 class CoDec(EIC.CoDec):
 
     def __init__(self, args):
@@ -45,10 +47,19 @@ class CoDec(EIC.CoDec):
         assert (img.dtype == np.uint8) or (img.dtype == np.uint16), f"current type = {img.dtype}"
         #assert (img.dtype == np.uint8), f"current type = {img.dtype}"
         compressed_img = io.BytesIO()
+        #skimage_io.imsave(fname=compressed_img, arr=img[:,:,0], plugin="imageio", check_contrast=False)
+        #skimage_io.imsave(fname=compressed_img, arr=img[:,:,0], plugin="pil", check_contrast=False)
         skimage_io.imsave(fname=compressed_img, arr=img, plugin="pil", check_contrast=False)
         #skimage_io.imsave(fname=compressed_img, arr=img, plugin="freeimage")
         #img = cv.cvtColor(img, cv.COLOR_RGB2BGR)
         #cv.imwrite(compressed_img, img, [cv.IMWRITE_PNG_COMPRESSION, COMPRESSION_LEVEL])
+        #with open(compressed_img, "wb") as f:
+        #    writer = png.Writer(width=img.shape[1], height=img.shape[0],
+        #                        bitdeph=16, greyscale=False)
+            # Convert z to the Python list of lists expected by
+            # the png writer.
+        #    z2list = z.reshape(-1, z.shape[1]*z.shape[2]).tolist()
+        #    writer.write(f, z2list)
         return compressed_img
 
     def decompress(self, compressed_img):

@@ -245,7 +245,7 @@ class CoDec(CT.CoDec):
         img = self.encode_read().astype(np.float32)
         self.original_shape = img.shape
         padded_img = self.pad_and_center_to_multiple_of_block_size(img)
-        print("--->", self.original_shape, padded_img.shape)
+        #print("--->", self.original_shape, padded_img.shape)
         if padded_img.shape != img.shape:
             logging.info(f"Padding image from dimensions {img.shape} to new dimensions: {padded_img.shape}")
         with open(self.args.output + ".shape", "wb") as file:

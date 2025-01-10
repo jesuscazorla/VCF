@@ -35,6 +35,7 @@ class CoDec(Q.CoDec):
 
     def encode(self):
         img = self.encode_read()#.astype(np.int16)
+        print("----------------->", img.dtype)
         #img -= 128
         #img_128 = img.astype(np.int16) - 128
         #img = img.astype(np.uint8)
@@ -46,6 +47,8 @@ class CoDec(Q.CoDec):
         if np.min(k) < 0:
             logging.warning(f"k[{np.unravel_index(np.argmin(k),k.shape)}]={np.min(k)}")
         #k = k.astype(np.uint8)
+        k = k.astype(np.uint16)
+        
         compressed_k = self.compress(k)
         self.encode_write(compressed_k)
         #self.BPP = (self.output_bytes*8)/(img.shape[0]*img.shape[1])
