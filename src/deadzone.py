@@ -14,16 +14,18 @@ from information_theory import distortion # pip install "information_theory @ gi
 
 import entropy_image_coding as EIC
 import importlib
+import cv2 as cv
   
 default_QSS = 32
 default_EIC = "PNG"
-
+default_filter = None
 #_parser, parser_encode, parser_decode = parser.create_parser(description=__doc__)
 
 parser.parser_encode.add_argument("-e", "--entropy_image_codec", help=f"Entropy Image Codec (default: {default_EIC})", default=default_EIC)
 parser.parser_decode.add_argument("-e", "--entropy_image_codec", help=f"Entropy Image Codec (default: {default_EIC})", default=default_EIC)
 parser.parser_encode.add_argument("-q", "--QSS", type=parser.int_or_str, help=f"Quantization step size (default: {default_QSS})", default=default_QSS)
 parser.parser_decode.add_argument("-q", "--QSS", type=parser.int_or_str, help=f"Quantization step size (default: {default_QSS})", default=default_QSS)
+parser.parser_decode.add_argument("-f", "--filter", choices=["gaussian","median", "box", "nlmcolor", "nlmgray"], help=f"Filter to apply. (default: {default_filter})", default= default_filter)
 
 args = parser.parser.parse_known_args()[0]
 EC = importlib.import_module(args.entropy_image_codec)
@@ -59,6 +61,23 @@ class CoDec(EC.CoDec):
         return compressed_k
     '''
 
+    def low_filter (self, k):
+        if self.filter == "gaussian":
+            k_filtered = cv.GaussianBlur(k,(3,3), 0)
+        elif self.filter == "median":   
+            k_filtered = cv.medianBlur(k,3)
+        elif self.filter == "box":
+            k_filtered = cv.blur(k,(3,3))
+        elif self.filter == "nlmcolor":
+            k_filtered = cv.fastNlMeansDenoisingColored(k,None,10,10,7,21)
+        elif self.filter == "nlmgray":
+            k_filtered = cv.fastNlMeansDenoising(k,10,7,21)
+        else:
+            k_filtered = k
+        
+        return k_filtered
+
+
     def encode(self):
         '''Read an image, quantize the image, and save it.'''
         img = self.encode_read()
@@ -83,6 +102,8 @@ class CoDec(EC.CoDec):
     '''
     
     def decode(self):
+        self.filter = args.filter
+
         '''Read a quantized image, "dequantize", and save.'''
         compressed_k = self.decode_read()
         k = self.decompress(compressed_k)
@@ -90,10 +111,11 @@ class CoDec(EC.CoDec):
         #y_128 = self.dequantize(k)
         #y = (np.rint(y_128).astype(np.int16) + 128).astype(np.uint8)
         y = self.dequantize(k).astype(np.uint8)
+        y_filtered = self.low_filter(y)
         #y = k
         #print("---------------", np.max(y))
         logging.debug(f"y.shape={y.shape} y.dtype={y.dtype}")        
-        self.decode_write(y)
+        self.decode_write(y_filtered)
         #rate = (self.input_bytes*8)/(k.shape[0]*k.shape[1])
         #RMSE = distortion.RMSE(img, y)
         #return RMSE

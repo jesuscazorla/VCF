@@ -11,12 +11,13 @@ from sklearn import cluster  # pip install scikit-learn
 
 import entropy_image_coding as EIC
 import importlib
-
+import cv2 as cv
 from information_theory import information  # pip install "information_theory @ git+https://github.com/vicente-gonzalez-ruiz/information_theory"
   
 default_block_size = 4
 default_EIC = "PNG"
 default_N_clusters = 256
+default_filter = None
 
 parser.parser_encode.add_argument("-e", "--entropy_image_codec", help=f"Entropy Image Codec (default: {default_EIC})", default=default_EIC)
 parser.parser_decode.add_argument("-e", "--entropy_image_codec", help=f"Entropy Image Codec (default: {default_EIC})", default=default_EIC)
@@ -24,6 +25,7 @@ parser.parser_encode.add_argument("-b", "--block_size_VQ", type=parser.int_or_st
 parser.parser_decode.add_argument("-b", "--block_size_VQ", type=parser.int_or_str, help=f"Block size (default: {default_block_size})", default=default_block_size)
 parser.parser_encode.add_argument("-n", "--N_clusters", type=parser.int_or_str, help=f"Number of clusters (default: {default_N_clusters})", default=default_N_clusters)
 parser.parser_decode.add_argument("-n", "--N_clusters", type=parser.int_or_str, help=f"Number of clusters (default: {default_N_clusters})", default=default_N_clusters)
+parser.parser_decode.add_argument("-f", "--filter", choices=["gaussian","median", "box", "nlmcolor", "nlmgray"], help=f"Filter to apply. (default: {default_filter})", default= default_filter)
 
 args = parser.parser.parse_known_args()[0]
 EC = importlib.import_module(args.entropy_image_codec)
@@ -47,16 +49,34 @@ class CoDec(EC.CoDec):
         #self.encode_write_fn(compressed_k, self.output + "_labels")
         #compressed_centroids = self.compress(centroids)
         #self.encode_write_fn(compressed_centroids, self.output + "_centroids")
-    
+           
+    def low_filter (self, k):
+        if self.filter == "gaussian":
+            k_filtered = cv.GaussianBlur(k,(3,3), 0)
+        elif self.filter == "median":   
+            k_filtered = cv.medianBlur(k,3)
+        elif self.filter == "box":
+            k_filtered = cv.blur(k,(3,3))
+        elif self.filter == "nlmcolor":
+            k_filtered = cv.fastNlMeansDenoisingColored(k,None,10,10,7,21)
+        elif self.filter == "nlmgray":
+            k_filtered = cv.fastNlMeansDenoising(k,10,7,21)
+        else:
+            k_filtered = k
+        
+        return k_filtered
+
     def decode(self):
+        self.filter = args.filter
         compressed_k = self.decode_read()
         #compressed_centroids = self.decode_read_fn(self.input + "_centroids")
         #compressed_k = self.decode_read_fn(self.input + "_labels")
         #centroids = self.decompress(compressed_centroids)
         k = self.decompress(compressed_k)
-        #y = self.dequantize(k, centroids)
+        #y = self.dequantize(k,  centroids)
         y = self.dequantize(k)
-        self.decode_write(y)
+        y_filtered = self.low_filter(y)
+        self.decode_write(y_filtered)
 
     def quantize(self, img):
         blocks = []

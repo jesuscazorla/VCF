@@ -18,14 +18,17 @@ from scalar_quantization.LloydMax_quantization import name as quantizer_name # p
 
 import entropy_image_coding as EIC
 import importlib
+import cv2 as cv
 
 default_QSS = 32
 default_EIC = "PNG"
+default_filter = None
 
 parser.parser_encode.add_argument("-e", "--entropy_image_codec", help=f"Entropy Image Codec (default: {default_EIC})", default=default_EIC)
 parser.parser_decode.add_argument("-e", "--entropy_image_codec", help=f"Entropy Image Codec (default: {default_EIC})", default=default_EIC)
 parser.parser_encode.add_argument("-q", "--QSS", type=parser.int_or_str, help=f"Quantization step size (default: {default_QSS})", default=default_QSS)
 parser.parser_decode.add_argument("-q", "--QSS", type=parser.int_or_str, help=f"Quantization step size (default: {default_QSS})", default=default_QSS)
+parser.parser_decode.add_argument("-f", "--filter", choices=["gaussian","median", "box", "nlmcolor", "nlmgray"], help=f"Filter to apply. (default: {default_filter})", default= default_filter)
 
 args = parser.parser.parse_known_args()[0]
 EC = importlib.import_module(args.entropy_image_codec)
@@ -42,6 +45,23 @@ class CoDec(EC.CoDec):
         compressed_k = super().compress(k)
         return compressed_k
     '''
+    
+    def low_filter (self, k):
+        if self.filter == "gaussian":
+            k_filtered = cv.GaussianBlur(k,(3,3), 0)
+        elif self.filter == "median":   
+            k_filtered = cv.medianBlur(k,3)
+        elif self.filter == "box":
+            k_filtered = cv.blur(k,(3,3))
+        elif self.filter == "nlmcolor":
+            k_filtered = cv.fastNlMeansDenoisingColored(k,None,10,10,7,21)
+        elif self.filter == "nlmgray":
+            k_filtered = cv.fastNlMeansDenoising(k,10,7,21)
+        else:
+            k_filtered = k
+        
+        return k_filtered
+
 
     def encode(self):
         img = self.encode_read()
@@ -56,7 +76,9 @@ class CoDec(EC.CoDec):
         compressed_k = self.decode_read()
         k = self.decompress(compressed_k)
         y = self.dequantize(k)
-        self.decode_write(y)
+        y_filtered = self.low_filter(y)
+
+        self.decode_write(y_filtered)
         #rate = (self.input_bytes*8)/(k.shape[0]*k.shape[1])
         #return rate
 
@@ -95,6 +117,8 @@ class CoDec(EC.CoDec):
         return k
 
     def dequantize(self, k):
+        self.filter = args.filter
+
         with open(f"{self.args.input}_QSS.txt", 'r') as f:
             QSS = int(f.read())
         logging.info(f"Read QSS={QSS} from {self.args.output}_QSS.txt")
